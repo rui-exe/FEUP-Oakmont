@@ -21,4 +21,4 @@ minimal_apt_get_args='-y --no-install-recommends'
 HBASE_BUILD_PACKAGES="curl"
 
 ## Run time dependencies ##
-HBASE_RUN_PACKAGES="openjdk-8-jre-headless"
+HBASE_RUN_PACKAGES="openjdk-8-jre-headless openssh-server"

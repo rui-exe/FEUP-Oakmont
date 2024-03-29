@@ -6,7 +6,6 @@ apt-get update -y
 
 apt-get install $minimal_apt_get_args $HBASE_BUILD_PACKAGES
 
-
 curl --insecure $HBASE_DIST/$HBASE_VERSION/hbase-$HBASE_VERSION-bin.tar.gz | tar -x -z && mv hbase-${HBASE_VERSION} hbase
 
 cd /hbase
@@ -37,6 +36,21 @@ apt-get remove --purge -y $HBASE_BUILD_PACKAGES $AUTO_ADDED_PACKAGES
 
 # Install the run-time dependencies
 apt-get install $minimal_apt_get_args $HBASE_RUN_PACKAGES
+
+# Setup ssh
+service ssh start
+
+# Generate SSH key if not already present
+if [ ! -f $HOME/.ssh/id_rsa ]; then
+    ssh-keygen -t rsa -N "" -f $HOME/.ssh/id_rsa
+fi
+
+# Copy the public key to the authorized_keys file for passwordless SSH
+cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
+
+# Set correct permissions for SSH files
+chmod 700 $HOME/.ssh
+chmod 600 $HOME/.ssh/authorized_keys
 
 rm -rf /tmp/* /var/tmp/*
 
