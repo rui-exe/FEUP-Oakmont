@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  hbase-master:
+    hostname: hbase-master
+    container_name: hbase-master
+    build: .
+    networks:
+      - hbase
+    ports:
+      - "8080:8080"
+      - "8085:8085"
+      - "9090:9090"
+      - "9095:9095"
+      - "2181:2181"
+      - "16010:16010"
+    volumes:
+      - ./dataMaster:/data
+
+networks:
+  hbase:
