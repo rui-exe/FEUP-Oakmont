@@ -19,43 +19,33 @@ def create_tables():
     connection = happybase.Connection(host='localhost', port=9090)
     print("Connected to HBase")
     
-    
     # Create a table used for conversion from financial instrument popularity to instrument
-    table_name = 'popularity_to_instrument'
-    families = {
-        'data': {}
-    }
-    connection.create_table(table_name, families)
-
+    popularity_to_instrument_table_name = 'popularity_to_instrument'
+    if popularity_to_instrument_table_name.encode() not in connection.tables():
+        families = {'cf1': {}}
+        connection.create_table(popularity_to_instrument_table_name, families)
+        print(f"Table '{popularity_to_instrument_table_name}' created.")
 
     # Create the table instrument for prices
-    table_name = 'instrument_prices'
-    families = {
-        'series': {}
-    }
-    connection.create_table(table_name, families)
-
+    instrument_prices_table_name = 'instrument_prices'
+    if instrument_prices_table_name.encode() not in connection.tables():
+        families = {'series': {}}
+        connection.create_table(instrument_prices_table_name, families)
+        print(f"Table '{instrument_prices_table_name}' created.")
 
     # Create table Item
-    table_name = 'instrument'
-    families = {
-        'info':  {},
-        'posts': {}
-    }
-
-    connection.create_table(table_name, families)
+    financial_instruments_table_name = 'financial_instruments'
+    if financial_instruments_table_name.encode() not in connection.tables():
+        families = {'info': {}, 'posts': {}}
+        connection.create_table(financial_instruments_table_name, families)
+        print(f"Table '{financial_instruments_table_name}' created.")
 
     # Create table User
-    table_name = 'user'
-    families = {
-        'info': {},
-        'posts': {},
-        'following': {},
-        'trades':  {},
-        'portfolio': {}
-    }
-
-    connection.create_table(table_name, families)
+    user_table_name = 'user'
+    if user_table_name.encode() not in connection.tables():
+        families = {'info': {}, 'posts': {}, 'following': {}, 'trades': {}, 'portfolio': {}}
+        connection.create_table(user_table_name, families)
+        print(f"Table '{user_table_name}' created.")
 
     # Close the connection
     connection.close()
