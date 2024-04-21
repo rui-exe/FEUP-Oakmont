@@ -19,6 +19,7 @@ services:
     volumes:
       - ./database/dataMaster:/data
 
+
   backend:
     build:
       context: backend
@@ -27,6 +28,7 @@ services:
       - ./backend/.env
     depends_on:
       - hbase-master
+
     networks:
       - database
       - backend
