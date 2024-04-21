@@ -1,4 +1,4 @@
 Ignore all .env files except for example ones
 *.env
 !*.example.env
-__pycache__
+__pycache__/
