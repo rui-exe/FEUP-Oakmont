@@ -4,6 +4,7 @@ import yfinance as yf
 import datetime
 import csv
 import random
+import time
 
 def wait_for_hbase():
     while True:
@@ -56,6 +57,31 @@ def convert_yfinance_price_history_to_hbase_dict(symbol,yahoo_df):
         }
     return data
 
+def populate_users(connection):
+    #get data from the datasets/users.csv and populate the user table that user has as the row_id is the columns username and the columns that i want is password email and name that are all in the csv
+    data = dict()
+    for row in csv.DictReader(open("datasets/users.csv")):
+        username = row['username']
+        data[username.encode("utf-8")] = {
+            b'info:name': row['name'].encode('utf-8'),
+            b'info:password': row['password'].encode('utf-8'),
+            b'info:email': row['email'].encode('utf-8')
+        }
+    populate_table(connection, 'user', data)
+
+def populate_following(connection):
+    #get random users from the user table and populate the following table with the users that they follow
+    table = connection.table('user')
+    users = list(table.scan())
+    data = dict()
+    for user, columns in users:
+        other_users = [u for u in users if u[0] != user]
+        following = random.sample(other_users, random.randint(0, 100))
+        following = [(followed_user.decode('utf-8'), _) for followed_user, _ in following]
+        data[user] = {f'following:{followed_user}'.encode('utf-8'): b'1' for followed_user, _ in following}
+    populate_table(connection, 'user', data)
+
+
 
 def populate_financial_instruments(connection,symbols):
     for symbol in symbols:
@@ -86,6 +112,7 @@ def read_symbols_from_csv(file_name,column_name):
             symbols.append(row[column_name])
     return symbols    
 
+
 def populate_tables():
     wait_for_hbase()
     print("HBase is ready!")
@@ -95,12 +122,19 @@ def populate_tables():
     
     
     #symbols = ['^GSPC', 'AAPL', 'GOOGL', 'MSFT', 'GME', 'NVDA' , 'KO', 'EDR', 'EDP.LS','FCP.LS']
-    symbols = read_symbols_from_csv("symbols.csv","Ticker")
+    #symbols = read_symbols_from_csv("symbols.csv","Ticker")
     
     #shuffle to avoid hotspots
-    random.shuffle(symbols)
-    populate_financial_instruments(connection,symbols)
+    #random.shuffle(symbols)
 
+    #get unique Stock Name from the datasets/stock_tweets.csv
+    symbols = read_symbols_from_csv("datasets/stock_tweets.csv","Stock Name")
+    symbols = list(set(symbols))
+    
+    
+    populate_financial_instruments(connection,symbols)
+    populate_users(connection)
+    populate_following(connection)
     
 
     
