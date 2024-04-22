@@ -145,7 +145,7 @@ def populate_tables():
     
     
     #symbols = ['^GSPC', 'AAPL', 'GOOGL', 'MSFT', 'GME', 'NVDA' , 'KO', 'EDR', 'EDP.LS','FCP.LS']
-    #symbols = read_symbols_from_csv("symbols.csv","Ticker")
+    #symbols = read_symbols_from_csv("datasets/symbols.csv","Ticker")
     
     #shuffle to avoid hotspots
     #random.shuffle(symbols)
@@ -155,14 +155,10 @@ def populate_tables():
     symbols = list(set(symbols))
     
     
-    #populate_financial_instruments(connection,symbols)
-    #populate_users(connection)
-    #populate_following(connection)
-    #populate_posts(connection)
- 
-
-    
-
+    populate_financial_instruments(connection,symbols)
+    populate_users(connection)
+    populate_following(connection)
+    populate_posts(connection)
 
 if __name__ == "__main__":
     populate_tables()
