@@ -1,6 +1,6 @@
 from fastapi import APIRouter,Query,Path
 from app.api.deps import HBase
-from app.crud import financial_instruments as financial_instruments_crud
+from app.crud import financial_instruments as financial_instruments_crud,posts as crud_posts
 from app.models.financial_instruments import FinancialInstrument,Tick
 from datetime import datetime,timedelta
 
@@ -19,3 +19,10 @@ async def get_financial_instruments_with_params(
     interval: timedelta = Query(..., description="Interval for the tick data")
 ) -> list[Tick]:
     return financial_instruments_crud.get_instrument_prices(db, symbol, start_date, end_date, interval)
+
+@router.get("/{symbol}/posts")
+def get_user_posts(db:HBase, symbol:str):
+  """
+  Get the posts of a user.
+  """
+  return crud_posts.get_symbol_posts(db, symbol)
