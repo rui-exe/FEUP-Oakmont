@@ -6,6 +6,19 @@ import csv
 import random
 import time
 import json
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password: str) -> str:
+  """
+  Hash a password.
+  Args:
+    password: The password to hash
+  Returns:
+    str: The hashed password
+  """
+  return pwd_context.hash(password)
 
 def wait_for_hbase():
     while True:
@@ -64,7 +77,7 @@ def populate_users(connection):
         username = row['username']
         data[username.encode("utf-8")] = {
             b'info:name': row['name'].encode('utf-8'),
-            b'info:password': row['password'].encode('utf-8'),
+            b'info:password': get_password_hash(['password']).encode('utf-8'),
             b'info:email': row['email'].encode('utf-8')
         }
     populate_table(connection, 'user', data)
