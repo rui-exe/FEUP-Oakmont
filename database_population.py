@@ -127,6 +127,27 @@ def populate_financial_instruments(connection,symbols):
         except Exception as e:
             print(e)
 
+def populate_trades(connection):
+    users = list(connection.table('user').scan())
+    symbols = set([key[0].decode('utf-8') for key in connection.table('financial_instruments').scan(columns=[])])
+    data_trades = dict()
+    for row in csv.DictReader(open("datasets/trades.csv")):
+        username = random.choice(users)[0].decode('utf-8')
+        symbol = row['Ticker']
+        if (symbol not in symbols):
+            continue
+        type = row['Transaction Type'].split(" ")[0]
+        quantity = row['Quantity']
+        price_per_item = row['Price']
+        time_offered = row['Trade Date']
+        time_executed = row['Filing Date']
+        trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": quantity, "price_per_item": price_per_item, "time_offered": time_offered})
+        if username not in data_trades:
+            data_trades[username] = {}
+        
+        data_trades[username][f'trades:{time_executed}'.encode('utf-8')] = trade_json.encode('utf-8')
+    populate_table(connection, 'user', data_trades)
+
 def read_symbols_from_csv(file_name,column_name):
     symbols = []
     with open(file_name, 'r') as csvfile:
@@ -155,10 +176,11 @@ def populate_tables():
     symbols = list(set(symbols))
     
     
-    populate_financial_instruments(connection,symbols)
-    populate_users(connection)
-    populate_following(connection)
-    populate_posts(connection)
+    #populate_financial_instruments(connection,symbols)
+    #populate_users(connection)
+    #populate_following(connection)
+    #populate_posts(connection)
+    #populate_trades(connection)
 
 if __name__ == "__main__":
     populate_tables()
