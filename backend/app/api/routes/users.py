@@ -3,7 +3,7 @@
 """
 from typing import Any
 from fastapi import APIRouter, HTTPException
-from app.crud import users as crud_users
+from app.crud import users as crud_users, posts as crud_posts
 from app.api.deps import (
     CurrentUser,
     HBase,
@@ -53,3 +53,10 @@ def delete_user(db: HBase, current_user: CurrentUser,
 
   crud_users.delete_user_by_username(username)
   return {"message": "User deleted successfully"}
+
+@router.get("/{username}/posts")
+def get_user_posts(db:HBase, username:str):
+  """
+  Get the posts of a user.
+  """
+  return crud_posts.get_user_posts(db, username)
