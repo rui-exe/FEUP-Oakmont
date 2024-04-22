@@ -1,10 +1,10 @@
 From ubuntu:bionic
 
-COPY /shell-scripts/*.sh /shell-scripts/
+COPY ./shell-scripts/*.sh /shell-scripts/
 
-COPY start-hbase.sh /start-hbase.sh
+COPY ./start-hbase.sh /start-hbase.sh
 
-ENV HBASE_VERSION 2.2.4
+ENV HBASE_VERSION 2.5.8
 
 RUN /shell-scripts/prepare-hbase.sh 
 

@@ -17,7 +17,7 @@ services:
       - "2181:2181"
       - "16010:16010"
     volumes:
-      - ./database/dataMaster:/data
+      - ./database/data:/data
 
 
   backend:
