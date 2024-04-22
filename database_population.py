@@ -58,6 +58,14 @@ def convert_yfinance_price_history_to_hbase_dict(symbol,yahoo_df):
         }
     return data
 
+def delete_trades_from_user(connection, symbol, user):
+    table = connection.table('user')
+    trades = table.row(user, columns=[b'trades'])
+    for date, trade in trades.items():
+        trade = json.loads(trade.decode('utf-8'))
+        if trade['symbol'] == symbol:
+            table.delete(user, columns=[f'trades:{date}'.encode('utf-8')])
+
 def populate_users(connection):
     data = dict()
     for row in csv.DictReader(open("datasets/users.csv")):
@@ -137,7 +145,13 @@ def populate_trades(connection):
         if (symbol not in symbols):
             continue
         type = row['Transaction Type'].split(" ")[0]
-        quantity = row['Quantity']
+        if type == "P":
+            type = "S"
+        else:
+            type = "P"
+        quantity = int(row['Quantity'])
+        if quantity < 0:
+            quantity = -quantity
         price_per_item = row['Price']
         time_offered = row['Trade Date']
         time_executed = row['Filing Date']
@@ -147,6 +161,40 @@ def populate_trades(connection):
         
         data_trades[username][f'trades:{time_executed}'.encode('utf-8')] = trade_json.encode('utf-8')
     populate_table(connection, 'user', data_trades)
+
+def populate_portfolio(connection):
+    users_table = connection.table('user').scan(columns=[b'trades'])
+    users = list(users_table)
+    data = dict()
+    for user, trades in users:
+        user_stocks = {}
+        for date, trade in trades.items():
+            date = date.decode('utf-8')
+            trade = json.loads(trade.decode('utf-8'))
+            symbol = trade['symbol']
+            quantity = float(trade['quantity'])
+            type = trade['type']
+            price_per_item = float(trade['price_per_item'])
+            if symbol not in user_stocks:
+                user_stocks[symbol] = tuple([0,0])
+            if type == "P":
+                user_stocks[symbol] = tuple([user_stocks[symbol][0] + quantity, user_stocks[symbol][1] + quantity*price_per_item])
+            else:
+                user_stocks[symbol] = tuple([user_stocks[symbol][0] - quantity, user_stocks[symbol][1] - quantity*price_per_item])
+        
+        for symbol, (quantity, money_invested) in list(user_stocks.items()):
+            if quantity < 0 or money_invested < 0:
+                delete_trades_from_user(connection, symbol, user)
+                del user_stocks[symbol]
+        
+        user_stocks_json = json.dumps({symbol: {"quantity": quantity, "money_invested": money_invested} for symbol, (quantity, money_invested) in user_stocks.items()})
+
+        for symbol, value in json.loads(user_stocks_json).items():
+            if user not in data:
+                data[user] = {}
+            data[user][f'portfolio:{symbol}'.encode('utf-8')] = json.dumps(value).encode('utf-8')
+
+    populate_table(connection, 'user', data)
 
 def read_symbols_from_csv(file_name,column_name):
     symbols = []
@@ -176,11 +224,12 @@ def populate_tables():
     symbols = list(set(symbols))
     
     
-    #populate_financial_instruments(connection,symbols)
-    #populate_users(connection)
-    #populate_following(connection)
-    #populate_posts(connection)
-    #populate_trades(connection)
+    populate_financial_instruments(connection,symbols)
+    populate_users(connection)
+    populate_following(connection)
+    populate_posts(connection)
+    populate_trades(connection)
+    populate_portfolio(connection)
 
 if __name__ == "__main__":
     populate_tables()
