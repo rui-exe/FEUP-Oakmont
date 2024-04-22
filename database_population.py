@@ -5,6 +5,7 @@ import datetime
 import csv
 import random
 import time
+import json
 
 def wait_for_hbase():
     while True:
@@ -58,7 +59,6 @@ def convert_yfinance_price_history_to_hbase_dict(symbol,yahoo_df):
     return data
 
 def populate_users(connection):
-    #get data from the datasets/users.csv and populate the user table that user has as the row_id is the columns username and the columns that i want is password email and name that are all in the csv
     data = dict()
     for row in csv.DictReader(open("datasets/users.csv")):
         username = row['username']
@@ -70,7 +70,6 @@ def populate_users(connection):
     populate_table(connection, 'user', data)
 
 def populate_following(connection):
-    #get random users from the user table and populate the following table with the users that they follow
     table = connection.table('user')
     users = list(table.scan())
     data = dict()
@@ -80,6 +79,30 @@ def populate_following(connection):
         following = [(followed_user.decode('utf-8'), _) for followed_user, _ in following]
         data[user] = {f'following:{followed_user}'.encode('utf-8'): b'1' for followed_user, _ in following}
     populate_table(connection, 'user', data)
+
+def populate_posts(connection):
+    #get posts from the datasets/stock_tweets.csv Tweet column 
+    users = list(connection.table('user').scan())
+    data_users = dict()
+    data_symbols = dict()
+    for row in csv.DictReader(open("datasets/stock_tweets.csv")):
+        username = random.choice(users)[0].decode('utf-8')
+        post = row['Tweet']
+        symbol = row['Stock Name']
+        date = row['Date'].split("+")[0]
+
+        if username not in data_users:
+            data_users[username] = {}
+        user_posts_json = json.dumps({"symbol": symbol, "post": post})
+        data_users[username][f'posts:{date}'.encode('utf-8')] = user_posts_json.encode('utf-8')
+       
+        if symbol not in data_symbols:
+            data_symbols[symbol] = {}
+        symbol_posts_json = json.dumps({"username": username, "post": post})
+        data_symbols[symbol][f'posts:{date}'.encode('utf-8')] = symbol_posts_json.encode('utf-8')
+
+    populate_table(connection, 'user', data_users)
+    populate_table(connection, 'financial_instruments', data_symbols)
 
 
 
@@ -132,10 +155,11 @@ def populate_tables():
     symbols = list(set(symbols))
     
     
-    populate_financial_instruments(connection,symbols)
-    populate_users(connection)
-    populate_following(connection)
-    
+    #populate_financial_instruments(connection,symbols)
+    #populate_users(connection)
+    #populate_following(connection)
+    #populate_posts(connection)
+ 
 
     
 
