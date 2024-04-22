@@ -13,8 +13,8 @@ from app.models.users import (UserCreate, UserPublic)
 router = APIRouter()
 
 
-@router.post("/", response_model=UserPublic)
-def create_user(*, db: HBase, user_in: UserCreate) -> Any:
+@router.post("/")
+def create_user(*, db: HBase, user_in: UserCreate) -> UserPublic:
   """
   Create a new user.
   """
@@ -30,26 +30,26 @@ def create_user(*, db: HBase, user_in: UserCreate) -> Any:
   return user
 
 
-@router.get("/me", response_model=UserPublic)
-def read_user_me(current_user: CurrentUser) -> Any:
+@router.get("/me")
+def read_user_me(current_user: CurrentUser) -> UserPublic:
   """
   Get current user.
   """
   return current_user
 
 
-@router.delete("/{user_id}")
+@router.delete("/{username}")
 def delete_user(db: HBase, current_user: CurrentUser,
                 username: str) -> Any:
   """
   Delete the user with the provided ID.
   """
-  user = crud_users.get_user_by_username(username)
+  user = crud_users.get_user_by_username(db=db, username=username)
   if not user:
     raise HTTPException(status_code=404, detail="User not found")
   elif user != current_user:
     raise HTTPException(status_code=403,
                         detail="The user doesn't have enough privileges")
 
-  crud_users.delete_user_by_username(username)
+  crud_users.delete_user_by_username(db=db,username=username)
   return {"message": "User deleted successfully"}

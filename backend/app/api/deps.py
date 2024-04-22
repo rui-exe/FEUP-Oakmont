@@ -35,7 +35,7 @@ def get_current_user(db: HBase, token: OAuth2Token) -> User:
   """
   try:
     payload = jwt.decode(token,
-                         settings.PUBLIC_KEY,
+                         settings.SECRET_KEY,
                          algorithms=[settings.JWT_ALGORITHM])
     token_data = TokenPayload(**payload)
   except (JWTError, ValidationError):
@@ -43,7 +43,7 @@ def get_current_user(db: HBase, token: OAuth2Token) -> User:
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Could not validate credentials",
     )
-  user = crud_users.get_user_by_username(token_data.username)
+  user = crud_users.get_user_by_username(db=db, username=token_data.username)
   if not user:
     raise HTTPException(status_code=404, detail="User not found")
   return user

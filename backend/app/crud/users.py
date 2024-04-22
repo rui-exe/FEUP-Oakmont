@@ -16,16 +16,16 @@ def create_user(*, db: Connection, user_create: UserCreate) -> UserPublic:
   Returns:
     User: The created user
   """
-  
-  user = User.model_validate(
-      user_create,
-      update={"hashed_password": get_password_hash(user_create.password)})
-  
+
+  hashed_password = get_password_hash(user_create.password)
+  user = User(username=user_create.username, name=user_create.name, email=user_create.email, hashed_password=hashed_password)
+  user = User.model_validate(user)
   users = db.table("user")
+
   users.put(user.username.encode("utf-8"),{
-    user.name.encode("utf-8"),
-    user.password.encode("utf-8"),
-    user.email.encode("utf-8")
+    b"info:name":user.name.encode("utf-8"),
+    b"info:password":user.hashed_password.encode("utf-8"),
+    b"info:email":user.email.encode("utf-8")
   })
   
   return user
@@ -55,9 +55,10 @@ def get_user_by_username(*, db: Connection, username: str) -> User | None:
   """
   
   users = db.table("user")
-  user_in_db = users.row(username.decode("utf-8"), columns=[b'info:username', b'info:name', b'info:email', b'info:password'])
-  
-  username = user_in_db[b'info:username']
+  user_in_db = users.row(username.encode("utf-8"), columns=[b'info'])
+  if not user_in_db:
+      return None
+
   name = user_in_db[b'info:name']
   email = user_in_db[b'info:email']
   password = user_in_db[b'info:password']
