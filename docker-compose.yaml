@@ -48,7 +48,7 @@ services:
     networks:
       - backend
     ports:
-      - "3000:80"
+      - "3000:3000"
     restart: unless-stopped
 
 networks:
