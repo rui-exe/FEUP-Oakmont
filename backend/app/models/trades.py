@@ -6,8 +6,8 @@ from datetime import datetime
 from enum import Enum
 
 class TradeType(str, Enum):
-    P = "buy"
-    S = "sell"
+    buy = "buy"
+    sell = "sell"
     
 class Trade(BaseModel):
     type: TradeType

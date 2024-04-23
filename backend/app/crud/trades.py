@@ -1,5 +1,5 @@
 from happybase import Connection
-from app.models.trades import Trade,Position
+from app.models.trades import Trade,Position,TradeType
 import json
 from datetime import datetime
 def get_user_trades(db:Connection, username:str)->list[Trade]:
@@ -9,7 +9,7 @@ def get_user_trades(db:Connection, username:str)->list[Trade]:
         time_executed = key.decode("utf-8")[len("trades:"):]
         data = json.loads(data)
         trade = {
-            "type": data["type"],
+            "type": "buy" if data["type"]=="P" else "sell",
             "symbol": data["symbol"],
             "quantity": data["quantity"],
             "price_per_item": data["price_per_item"],
@@ -17,7 +17,6 @@ def get_user_trades(db:Connection, username:str)->list[Trade]:
             "time_executed": datetime.strptime(time_executed, "%Y-%m-%d %H:%M") 
         }
         trades.append(trade)
-    print(trades)
     return trades
 def get_user_portfolio(db:Connection, username:str)->list[Position]:
     pass

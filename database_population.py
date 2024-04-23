@@ -122,7 +122,6 @@ def populate_posts(connection):
         if username not in data_users:
             data_users[username] = {}
         user_posts_json = json.dumps({"symbol": symbol, "post": post})
-        date = convert_dmy_to_ymd(date)
         data_users[username][f'posts:{date}'.encode('utf-8')] = user_posts_json.encode('utf-8')
        
         if symbol not in data_symbols:
