@@ -171,6 +171,11 @@ def follow_user(*, db: Connection, follower: str, followee: str) -> bool:
         current_followers_count = int(table.counter_get(followee.encode('utf-8'), followers_count_key) or 0)
         table.counter_set(followee.encode('utf-8'), followers_count_key, current_followers_count + 1)
 
+        # Increment the follower's following count
+        following_count_key = f'info:following'.encode('utf-8')
+        current_following_count = int(table.counter_get(follower.encode('utf-8'), following_count_key) or 0)
+        table.counter_set(follower.encode('utf-8'), following_count_key, current_following_count + 1)
+
         # Add the followee to the follower's following list (optional)
         following_key = f'following:{followee}'.encode('utf-8')
         table.put(follower.encode('utf-8'), {following_key: b'1'})
@@ -204,4 +209,28 @@ def get_follower_count(*, db: Connection, username: str) -> int:
         # Handle exceptions, e.g., table not found, connection error, etc.
         # You may want to log the exception or handle it differently based on your application's requirements.
         print(f"Error occurred while retrieving follower count for user {username}: {e}")
+        return 0
+
+def get_following_count(*, db: Connection, username: str) -> int:
+    """
+    Get the number of users that the user is following.
+    
+    Args:
+        db (Connection): The database connection.
+        username (str): Username of the user to get the following count.
+    
+    Returns:
+        int: The number of users that the specified user is following.
+    """
+    try:
+        table = db.table('user')  # Assuming 'user' is the name of the table
+
+        # Get the following count of the user
+        following_count_key = f'info:following'.encode('utf-8')
+        following_count = int(table.counter_get(username.encode('utf-8'), following_count_key) or 0)
+        return following_count
+    except Exception as e:
+        # Handle exceptions, e.g., table not found, connection error, etc.
+        # You may want to log the exception or handle it differently based on your application's requirements.
+        print(f"Error occurred while retrieving following count for user {username}: {e}")
         return 0
