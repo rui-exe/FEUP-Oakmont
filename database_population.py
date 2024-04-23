@@ -87,8 +87,10 @@ def populate_users(connection):
             b'info:name': row['name'].encode('utf-8'),
             b'info:password': row['password'].encode('utf-8'),
             b'info:email': row['email'].encode('utf-8'),
-            b'info:followers': b'0'
         }
+        table = connection.table('user')
+        table.counter_set(username.encode('utf-8'), b'info:following', 0)
+        table.counter_set(username.encode('utf-8'), b'info:followers', 0)
     populate_table(connection, 'user', data)
 
 def populate_following(connection):
@@ -100,12 +102,13 @@ def populate_following(connection):
         following = random.sample(other_users, random.randint(0, 100))
         following = [(followed_user.decode('utf-8'), _) for followed_user, _ in following]
         data[user] = {f'following:{followed_user}'.encode('utf-8'): b'1' for followed_user, _ in following}
-        data[user][f'info:following'.encode('utf-8')] = str(len(following)).encode('utf-8')
+        table.counter_set(user, b'info:following', len(following))
         for followed_user, _ in following:
             if followed_user not in data:
                 data[followed_user] = {}
-            data[followed_user][f'followers:{user}'.encode('utf-8')] = b'1'
-            data[followed_user][f'info:followers'.encode('utf-8')] = str(int(data[followed_user].get(f'info:followers'.encode('utf-8'), b'0').decode('utf-8')) + 1).encode('utf-8')
+            user_following = user.decode('utf-8')
+            data[followed_user][f'followers:{user_following}'.encode('utf-8')] = b'1'
+            table.counter_inc(followed_user.encode('utf-8'), b'info:followers')
 
     populate_table(connection, 'user', data)
 
