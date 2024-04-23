@@ -100,6 +100,7 @@ def populate_following(connection):
         following = random.sample(other_users, random.randint(0, 100))
         following = [(followed_user.decode('utf-8'), _) for followed_user, _ in following]
         data[user] = {f'following:{followed_user}'.encode('utf-8'): b'1' for followed_user, _ in following}
+        data[user][f'info:following'.encode('utf-8')] = str(len(following)).encode('utf-8')
         for followed_user, _ in following:
             if followed_user not in data:
                 data[followed_user] = {}

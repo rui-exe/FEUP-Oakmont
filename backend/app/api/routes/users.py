@@ -107,3 +107,10 @@ def get_follower_count(db:HBase, username:str = Path(...,description="Username o
   Get the number of followers of a user.
   """
   return crud_users.get_follower_count(db=db, username=username)
+
+@router.post("/{username}/following_count")
+def get_following_count(db:HBase, username:str = Path(...,description="Username of the user to get the following count")):
+  """
+  Get the number of users that the user is following.
+  """
+  return crud_users.get_following_count(db=db, username=username)
