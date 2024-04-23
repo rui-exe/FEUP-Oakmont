@@ -61,20 +61,17 @@ def get_user_by_username(*, db: Connection, username: str) -> User | None:
       return None
     
   user_data = {
-    "username":username
+    "username":username,
+    "name": user_in_db[b"info:name"].decode("utf-8"),
+    "email": user_in_db[b"info:email"].decode("utf-8"),
+    "hashed_password": user_in_db[b"info:password"].decode("utf-8")
   }
   
-  db_col_to_pydantic_field = {
-      'info:name':'name',
-      'info:email':'email',
-      'info:password':'hashed_password',
-      'info:following':'nr_following',
-      'info:followers':'nr_followers'
-  }
-  for db_col_bytes in user_in_db:
-    db_col = db_col_bytes.decode("utf-8")
-    pydantic_field = db_col_to_pydantic_field[db_col]
-    user_data[pydantic_field] = user_in_db[db_col_bytes]
+  if b"info:following" in user_in_db:
+    user_data["nr_following"] = users.counter_get(username.encode("utf-8"),b"info:following")
+  if b"info:followers" in user_in_db:
+    user_data["nr_followers"] = users.counter_get(username.encode("utf-8"),b"info:followers")
+
 
   return User(**user_data)
 
@@ -115,6 +112,7 @@ def get_user_followers(*, db: Connection, username: str) -> list[str]:
         # iterate all the columns of the followers column family of the user
         followers_column_family = 'followers'
         followers_data = table.row(username.encode('utf-8'), columns=[f'{followers_column_family}'.encode('utf-8')])
+        print(followers_data)
         followers = [follower.decode('utf-8').replace(followers_column_family+':', '') for follower, _ in followers_data.items()]
         return followers
     except Exception as e:
@@ -140,6 +138,7 @@ def get_user_following(*, db: Connection, username: str) -> list[str]:
         # iterate all the columns of the following column family of the user
         following_column_family = 'following'
         following_data = table.row(username.encode('utf-8'), columns=[f'{following_column_family}'.encode('utf-8')])
+        print(following_data)
         print(following_data)
         following_users = [following.decode('utf-8').replace(following_column_family+':', '') for following, _ in following_data.items()]
         return following_users
@@ -180,13 +179,11 @@ def follow_user(*, db: Connection, follower: str, followee: str) -> bool:
 
         # Increment the followee's follower count
         followers_count_key = f'info:followers'.encode('utf-8')
-        current_followers_count = int(table.counter_get(followee.encode('utf-8'), followers_count_key) or 0)
-        table.counter_set(followee.encode('utf-8'), followers_count_key, current_followers_count + 1)
+        table.counter_inc(followee.encode('utf-8'), followers_count_key, 1)
 
         # Increment the follower's following count
         following_count_key = f'info:following'.encode('utf-8')
-        current_following_count = int(table.counter_get(follower.encode('utf-8'), following_count_key) or 0)
-        table.counter_set(follower.encode('utf-8'), following_count_key, current_following_count + 1)
+        table.counter_inc(follower.encode('utf-8'), following_count_key, 1)
 
         # Add the followee to the follower's following list (optional)
         following_key = f'following:{followee}'.encode('utf-8')
