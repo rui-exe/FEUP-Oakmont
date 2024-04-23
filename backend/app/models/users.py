@@ -5,19 +5,22 @@ from pydantic import BaseModel,Field
 
 
 
-class UserPublic(BaseModel):
+class UserBase(BaseModel):
   """
   The basic information of a user.
   """
   username: str
   name: str
   email: str
+
+class UserPublic(UserBase):
+  """
+  The public information of a user.
+  """
   nr_following: int = Field(default=0)
   nr_followers: int = Field(default=0)
 
-
-
-class UserCreate(UserPublic):
+class UserCreate(UserBase):
   """
   The information needed to create a new user.
   """
