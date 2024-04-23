@@ -196,6 +196,18 @@ def populate_portfolio(connection):
 
     populate_table(connection, 'user', data)
 
+
+def populate_popularity_to_instrument(connection):
+    #get all the trades from all the users
+    users_table = connection.table('user').scan(columns=[b'trades'])
+    users = list(users_table)
+    for user, trades in users:
+        for date, trade in trades.items():
+            date = date.decode('utf-8').split(":")[1]
+            date = int(datetime.datetime.strptime(date + ':00', '%m/%d/%Y %H:%M').timestamp())
+
+        break
+            
 def read_symbols_from_csv(file_name,column_name):
     symbols = []
     with open(file_name, 'r') as csvfile:
@@ -230,6 +242,7 @@ def populate_tables():
     populate_posts(connection)
     populate_trades(connection)
     populate_portfolio(connection)
+    #populate_popularity_to_instrument(connection)
 
 if __name__ == "__main__":
     populate_tables()
