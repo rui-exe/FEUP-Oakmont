@@ -168,13 +168,11 @@ def follow_user(*, db: Connection, follower: str, followee: str) -> bool:
 
         # Increment the followee's follower count
         followers_count_key = f'info:followers'.encode('utf-8')
-        current_followers_count = int(table.counter_get(followee.encode('utf-8'), followers_count_key) or 0)
-        table.counter_set(followee.encode('utf-8'), followers_count_key, current_followers_count + 1)
+        table.counter_inc(followee.encode('utf-8'), followers_count_key, 1)
 
         # Increment the follower's following count
         following_count_key = f'info:following'.encode('utf-8')
-        current_following_count = int(table.counter_get(follower.encode('utf-8'), following_count_key) or 0)
-        table.counter_set(follower.encode('utf-8'), following_count_key, current_following_count + 1)
+        table.counter_inc(follower.encode('utf-8'), following_count_key, 1)
 
         # Add the followee to the follower's following list (optional)
         following_key = f'following:{followee}'.encode('utf-8')
