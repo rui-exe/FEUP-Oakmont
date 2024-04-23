@@ -9,7 +9,8 @@ def get_symbols(db:Connection) -> list[FinancialInstrument]:
         symbol = key.decode('utf-8')
         name = data[b'info:name'].decode('utf-8')
         currency = data[b'info:currency'].decode('utf-8')
-        symbols.append({"symbol":symbol,"name": name, "currency": currency})
+        image = data[b'info:image'].decode('utf-8')
+        symbols.append({"symbol":symbol,"name": name, "currency": currency, "image": image})
     
     return symbols
 

@@ -31,7 +31,7 @@ def wait_for_hbase():
             time.sleep(5)
 
 def get_symbol_info(ticker):
-    return ticker.info['currency'], ticker.info['longName']
+    return ticker.info['currency'], ticker.info['longName'], ticker.info['website']
 
 def get_historical_data_daily(ticker):
     symbol_historical = ticker.history(period='max', interval='1d')
@@ -51,11 +51,12 @@ def populate_table(connection, table_name, data):
         for row, columns in data.items():
             batch.put(row, columns)
 
-def convert_yfinance_symbol_info_to_hbase_dict(symbol,currency,longName):
+def convert_yfinance_symbol_info_to_hbase_dict(symbol,currency,longName, website):
     data = dict()
     data[symbol.encode("utf-8")] = {
             b'info:name': longName.encode('utf-8'),
-            b'info:currency': currency.encode('utf-8')
+            b'info:currency': currency.encode('utf-8'),
+            b'info:image': f'https://logo.clearbit.com/{website}'.encode('utf-8'),
     }
     return data
 
@@ -142,8 +143,8 @@ def populate_financial_instruments(connection,symbols):
             ticker = yf.Ticker(symbol)
 
             
-            currency, longName = get_symbol_info(ticker)
-            symbol_info = convert_yfinance_symbol_info_to_hbase_dict(symbol,currency,longName)
+            currency, longName, website = get_symbol_info(ticker)
+            symbol_info = convert_yfinance_symbol_info_to_hbase_dict(symbol,currency,longName, website)
             populate_table(connection, 'financial_instruments', symbol_info)
 
             symbol_historical = get_historical_data_daily(ticker)

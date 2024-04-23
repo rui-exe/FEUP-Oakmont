@@ -5,6 +5,7 @@ class FinancialInstrument(BaseModel):
     symbol: str
     name: str
     currency:str
+    image:str
 
 class Tick(BaseModel):
     timestamp: datetime
