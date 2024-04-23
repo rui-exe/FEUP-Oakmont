@@ -4,3 +4,6 @@ happybase
 pydantic
 pydantic_settings
 python-dotenv
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
