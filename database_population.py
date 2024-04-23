@@ -174,6 +174,7 @@ def populate_trades(connection):
             quantity = -quantity
         price_per_item = row['Price']
         time_offered = row['Trade Date']
+        time_offered = time_offered + " " + str(random.randint(0,23)) + ":" + str(random.randint(0,59))
         time_executed = row['Filing Date']
         trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": quantity, "price_per_item": price_per_item, "time_offered": time_offered})
         if username not in data_trades:

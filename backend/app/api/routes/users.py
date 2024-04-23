@@ -3,12 +3,13 @@
 """
 from typing import Any
 from fastapi import APIRouter, HTTPException
-from app.crud import users as crud_users, posts as crud_posts
+from app.crud import users as crud_users, posts as crud_posts, trades as crud_trades
 from app.api.deps import (
     CurrentUser,
     HBase,
 )
 from app.models.users import (UserCreate, UserPublic)
+from app.models.trades import Trade
 
 router = APIRouter()
 
@@ -61,3 +62,19 @@ def get_user_posts(db:HBase, username:str):
   Get the posts of a user.
   """
   return crud_posts.get_user_posts(db, username)
+
+
+@router.get("/{username}/trades")
+def get_user_trades(db:HBase, username:str) -> list[Trade]:
+  """
+  Get the trades of a user.
+  """
+  return crud_trades.get_user_trades(db, username)
+
+
+@router.get("/{username}/portfolio")
+def get_user_portfolio(db:HBase, username:str):
+  """
+  Get the posts of a user.
+  """
+  return crud_trades.get_user_portfolio(db, username)
