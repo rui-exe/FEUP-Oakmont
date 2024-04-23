@@ -43,7 +43,7 @@ def create_tables():
     # Create table User
     user_table_name = 'user'
     if user_table_name.encode() not in connection.tables():
-        families = {'info': {}, 'posts': {}, 'following': {}, 'trades': {}, 'portfolio': {}}
+        families = {'info': {}, 'posts': {}, 'following': {}, 'followers': {},'trades': {}, 'portfolio': {}}
         connection.create_table(user_table_name, families)
         print(f"Table '{user_table_name}' created.")
 

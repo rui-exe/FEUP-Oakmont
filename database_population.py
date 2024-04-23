@@ -85,8 +85,9 @@ def populate_users(connection):
         username = row['username']
         data[username.encode("utf-8")] = {
             b'info:name': row['name'].encode('utf-8'),
-            b'info:password': get_password_hash(['password']).encode('utf-8'),
-            b'info:email': row['email'].encode('utf-8')
+            b'info:password': row['password'].encode('utf-8'),
+            b'info:email': row['email'].encode('utf-8'),
+            b'info:followers': b'0'
         }
     populate_table(connection, 'user', data)
 
@@ -99,6 +100,12 @@ def populate_following(connection):
         following = random.sample(other_users, random.randint(0, 100))
         following = [(followed_user.decode('utf-8'), _) for followed_user, _ in following]
         data[user] = {f'following:{followed_user}'.encode('utf-8'): b'1' for followed_user, _ in following}
+        for followed_user, _ in following:
+            if followed_user not in data:
+                data[followed_user] = {}
+            data[followed_user][f'followers:{user}'.encode('utf-8')] = b'1'
+            data[followed_user][f'info:followers'.encode('utf-8')] = str(int(data[followed_user].get(f'info:followers'.encode('utf-8'), b'0').decode('utf-8')) + 1).encode('utf-8')
+
     populate_table(connection, 'user', data)
 
 def populate_posts(connection):
