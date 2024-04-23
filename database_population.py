@@ -123,6 +123,7 @@ def populate_posts(connection):
         if username not in data_users:
             data_users[username] = {}
         user_posts_json = json.dumps({"symbol": symbol, "post": post})
+        date = convert_dmy_to_ymd(date)
         data_users[username][f'posts:{date}'.encode('utf-8')] = user_posts_json.encode('utf-8')
        
         if symbol not in data_symbols:
@@ -175,7 +176,10 @@ def populate_trades(connection):
             quantity = -quantity
         price_per_item = row['Price']
         time_offered = row['Trade Date']
+        time_offered = time_offered + " " + str(random.randint(0,23)) + ":" + str(random.randint(0,59))
         time_executed = row['Filing Date']
+        time_executed = convert_dmy_to_ymd(time_executed)
+        time_offered = convert_dmy_to_ymd(time_offered)
         trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": quantity, "price_per_item": price_per_item, "time_offered": time_offered})
         if username not in data_trades:
             data_trades[username] = {}
@@ -225,7 +229,7 @@ def populate_popularity_to_instrument(connection):
     for user, trades in users:
         for date, trade in trades.items():
             date = date.decode('utf-8').split(":")[1]
-            date = int(datetime.datetime.strptime(date + ':00', '%m/%d/%Y %H:%M').timestamp())
+            date = int(datetime.datetime.strptime(date + ':00', '%Y-%m-%d %H:%M').timestamp())
 
         break
             
@@ -237,6 +241,8 @@ def read_symbols_from_csv(file_name,column_name):
             symbols.append(row[column_name])
     return symbols    
 
+def convert_dmy_to_ymd(date):
+    return datetime.datetime.strptime(date, '%d/%m/%Y %H:%M').strftime('%Y-%m-%d %H:%M')
 
 def populate_tables():
     wait_for_hbase()
