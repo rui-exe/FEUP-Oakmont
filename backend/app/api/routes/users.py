@@ -33,19 +33,19 @@ def create_user(*, db: HBase, user_in: UserCreate) -> UserPublic:
   return user
 
 
-@router.get("/me")
-def read_user_me(current_user: CurrentUser) -> UserPublic:
+@router.get("/{username}")
+def read_user_me(db: HBase, username: str) -> UserPublic:
   """
-  Get current user.
+  Get the user with the provided username.
   """
-  return current_user
+  return crud_users.get_user_by_username(db=db, username=username)
 
 
 @router.delete("/{username}")
 def delete_user(db: HBase, current_user: CurrentUser,
                 username: str) -> Any:
   """
-  Delete the user with the provided ID.
+  Delete the user with the provided username.
   """
   user = crud_users.get_user_by_username(db=db, username=username)
   if not user:

@@ -59,12 +59,24 @@ def get_user_by_username(*, db: Connection, username: str) -> User | None:
   user_in_db = users.row(username.encode("utf-8"), columns=[b'info'])
   if not user_in_db:
       return None
+    
+  user_data = {
+    "username":username
+  }
+  
+  db_col_to_pydantic_field = {
+      'info:name':'name',
+      'info:email':'email',
+      'info:password':'hashed_password',
+      'info:following':'nr_following',
+      'info:followers':'nr_followers'
+  }
+  for db_col_bytes in user_in_db:
+    db_col = db_col_bytes.decode("utf-8")
+    pydantic_field = db_col_to_pydantic_field[db_col]
+    user_data[pydantic_field] = user_in_db[db_col_bytes]
 
-  name = user_in_db[b'info:name']
-  email = user_in_db[b'info:email']
-  password = user_in_db[b'info:password']
-
-  return User(username=username, name=name, email=email, hashed_password=password)
+  return User(**user_data)
 
 
 def authenticate(*, db: Connection, username: str,
@@ -79,7 +91,7 @@ def authenticate(*, db: Connection, username: str,
       User | None: The authenticated user or None if the user
         is not found or the password is incorrect
   """
-  db_user = get_user_by_username(db=db, username=username)
+  db_user:User = get_user_by_username(db=db, username=username)
   if not db_user:
     return None
   if not verify_password(password, db_user.hashed_password):
