@@ -2,7 +2,7 @@
   Users routes.
 """
 from typing import Any
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Path
 from app.crud import users as crud_users, posts as crud_posts
 from app.api.deps import (
     CurrentUser,
@@ -61,3 +61,30 @@ def get_user_posts(db:HBase, username:str):
   Get the posts of a user.
   """
   return crud_posts.get_user_posts(db, username)
+
+@router.get("/{username}/followers")
+def get_user_followers(db:HBase, username:str = Path(...,description="Username of the user to get the followers")):
+  """
+  Get the followers of a user.
+  """
+  return crud_users.get_user_followers(db=db, username=username)
+
+@router.get("/{username}/following")
+def get_user_following(db:HBase, username:str = Path(...,description="Username of the user to get the following")):
+  """
+  Get the users that the user is following.
+  """
+  return crud_users.get_user_following(db=db, username=username)
+
+@router.post("/{username}/follow")
+def follow_user(db:HBase, current_user:CurrentUser, username:str = Path(...,description="Username of the user to follow")):
+  """
+  Follow a user.
+  """
+  return crud_users.follow_user(db=db, follower=current_user.username, followee=username)
+@router.post("/{username}/follower_count")
+def get_follower_count(db:HBase, username:str = Path(...,description="Username of the user to get the follower count")):
+  """
+  Get the number of followers of a user.
+  """
+  return crud_users.get_follower_count(db=db, username=username)
