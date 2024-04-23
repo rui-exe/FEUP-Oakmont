@@ -71,10 +71,11 @@ def get_user_by_username(*, db: Connection, username: str) -> User | None:
       'info:following':'nr_following',
       'info:followers':'nr_followers'
   }
+  print(user_in_db)
   for db_col_bytes in user_in_db:
     db_col = db_col_bytes.decode("utf-8")
     pydantic_field = db_col_to_pydantic_field[db_col]
-    user_data[pydantic_field] = user_in_db[db_col_bytes]
+    user_data[pydantic_field] = user_in_db[db_col_bytes].decode("utf-8")
 
   return User(**user_data)
 
@@ -115,6 +116,7 @@ def get_user_followers(*, db: Connection, username: str) -> list[str]:
         # iterate all the columns of the followers column family of the user
         followers_column_family = 'followers'
         followers_data = table.row(username.encode('utf-8'), columns=[f'{followers_column_family}'.encode('utf-8')])
+        print(followers_data)
         followers = [follower.decode('utf-8').replace(followers_column_family+':', '') for follower, _ in followers_data.items()]
         return followers
     except Exception as e:
@@ -140,6 +142,7 @@ def get_user_following(*, db: Connection, username: str) -> list[str]:
         # iterate all the columns of the following column family of the user
         following_column_family = 'following'
         following_data = table.row(username.encode('utf-8'), columns=[f'{following_column_family}'.encode('utf-8')])
+        print(following_data)
         print(following_data)
         following_users = [following.decode('utf-8').replace(following_column_family+':', '') for following, _ in following_data.items()]
         return following_users
