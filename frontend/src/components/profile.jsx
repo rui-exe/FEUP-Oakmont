@@ -11,6 +11,8 @@ export default function Profile() {
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showMorePosts, setShowMorePosts] = useState(false);
+  const [showMoreTrades, setShowMoreTrades] = useState(false);
 
   // Fetch user data when the component mounts or when username prop changes
   useEffect(() => {
@@ -84,6 +86,16 @@ export default function Profile() {
     );
   }
 
+  // Function to toggle the display of additional posts
+  const toggleShowMorePosts = () => {
+    setShowMorePosts(!showMorePosts);
+  };
+
+  // Function to toggle the display of additional trades
+  const toggleShowMoreTrades = () => {
+    setShowMoreTrades(!showMoreTrades);
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="max-w-3xl w-full space-y-8">
@@ -108,34 +120,47 @@ export default function Profile() {
             </div>
           </div>
         </div>
-        {/* Render posts */}
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          <div className="p-6 sm:p-8">
-            <h2 className="text-xl font-bold mb-4">Posts</h2>
-            <div className="grid gap-4">
-              {posts.map((post, index) => (
-                <div key={index} className="bg-gray-100 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold">{post.symbol}</h3>
-                  <p className="text-gray-500 mt-2">{post.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
         {/* Render trades */}
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           <div className="p-6 sm:p-8">
             <h2 className="text-xl font-bold mb-4">Trades</h2>
             <div className="grid gap-4">
-              {trades.map((trade, index) => (
+              {trades.slice(0, showMoreTrades ? trades.length : 5).map((trade, index) => (
                 <div key={index} className="bg-gray-100 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold">{trade.symbol}</h3>
-                  <p className="text-gray-500 mt-2">{trade.type.toUpperCase()}: {trade.quantity} shares at {trade.price_per_item}</p>
+                  <p className="text-black-500 mt-2">{new Date(trade.time_executed).toLocaleString()}</p>
+                  <p className="text-gray-500 mt-2">{trade.type.toUpperCase()}: {trade.quantity} shares at {trade.price_per_item}$</p>
                 </div>
               ))}
             </div>
+            {trades.length > 5 && (
+              <button onClick={toggleShowMoreTrades} className="text-blue-500 hover:text-blue-700">
+                {showMoreTrades ? 'Show less trades' : 'Show more trades'}
+              </button>
+            )}
           </div>
         </div>
+        {/* Render posts */}
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          <div className="p-6 sm:p-8">
+            <h2 className="text-xl font-bold mb-4">Posts</h2>
+            <div className="grid gap-4">
+              {posts.slice(0, showMorePosts ? posts.length : 5).map((post, index) => (
+                <div key={index} className="bg-gray-100 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold">{post.symbol}</h3>
+                  <p className="text-black-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
+                  <p className="text-gray-500 mt-2">{post.text}</p>
+                </div>
+              ))}
+            </div>
+            {posts.length > 5 && (
+              <button onClick={toggleShowMorePosts} className="text-blue-500 hover:text-blue-700">
+                {showMorePosts ? 'Show less posts' : 'Show more posts'}
+              </button>
+            )}
+          </div>
+        </div>
+        
       </div>
     </div>
   );
