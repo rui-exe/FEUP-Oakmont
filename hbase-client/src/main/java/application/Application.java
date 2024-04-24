@@ -3,65 +3,70 @@ package application;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Increment;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.RowMutations;
+import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.CellUtil;
 
 import java.io.IOException;
 
 public class Application {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         String zookeeperHost = System.getenv("ZOOKEEPER_HOST");
         String zookeeperPort = System.getenv("ZOOKEEPER_PORT");
 
         if (zookeeperHost == null || zookeeperHost.isEmpty() || zookeeperPort == null || zookeeperPort.isEmpty()) {
-          throw new IllegalArgumentException("ZOOKEEPER_HOST or ZOOKEEPER_PORT environment variables are missing or empty.");
+            throw new IllegalArgumentException("ZOOKEEPER_HOST or ZOOKEEPER_PORT environment variables are missing or empty.");
         }
         Configuration config = HBaseConfiguration.create();
         config.set("hbase.zookeeper.quorum", zookeeperHost);
         config.set("hbase.zookeeper.property.clientPort", zookeeperPort);
 
 
-        try {
-            // Create a connection to the HBase cluster
-            Connection connection = ConnectionFactory.createConnection(config);
+        try (Connection connection = ConnectionFactory.createConnection(config);
+            Table table = connection.getTable(TableName.valueOf("user"))) {
 
-            // Create a table object for the financial_instruments table
-            TableName tableName = TableName.valueOf("financial_instruments");
-            Table table = connection.getTable(tableName);
+            String username = "ssample4k";
+            String userInfoCF = "info";
+            String balanceQualifier = "balance";
+            long initialBalance = 50;
 
-            // Create a Scan object to scan the table
-            Scan scan = new Scan();
+            Put put = new Put(Bytes.toBytes(username));
+            put.addColumn(Bytes.toBytes(userInfoCF), Bytes.toBytes(balanceQualifier), Bytes.toBytes(initialBalance));
+            table.put(put);
 
-            // Specify the column family to retrieve
-            scan.addFamily(Bytes.toBytes("info"));
 
-            // Perform the scan and retrieve the result
-            ResultScanner scanner = table.getScanner(scan);
+            Increment increment = new Increment(Bytes.toBytes(username));
+            increment.addColumn(Bytes.toBytes(userInfoCF), Bytes.toBytes(balanceQualifier), -10);
+            RowMutations mutations = new RowMutations(Bytes.toBytes(username));
+            mutations.add(increment);
+            for (int i = 0; i < 6; i++) {
+                System.out.println("Balance before iteration " + (i + 1) + ": " + getBalance(table, username, userInfoCF, balanceQualifier));
+                long balance_needed = 10;
+                //mutate if balance of the user >= balance_needed
+                boolean transactionWentThrough = table.checkAndMutate(
+                        Bytes.toBytes(username), Bytes.toBytes(userInfoCF), Bytes.toBytes(balanceQualifier),
+                        CompareFilter.CompareOp.LESS_OR_EQUAL,
+                        Bytes.toBytes(balance_needed),
+                        mutations);
 
-            // Iterate over the scanner results and print each row
-            for (Result result : scanner) {
-                // Extract and print the row key
-                byte[] rowKey = result.getRow();
-                System.out.println("Row key: " + Bytes.toString(rowKey));
+                System.out.println("Balance after iteration " + (i + 1) + ": " + getBalance(table, username, userInfoCF, balanceQualifier));
 
-                // Extract and print the column values in the "info" family
-                for (Cell cell : result.listCells()) {
-                    byte[] family = CellUtil.cloneFamily(cell);
-                    byte[] qualifier = CellUtil.cloneQualifier(cell);
-                    byte[] value = CellUtil.cloneValue(cell);
-                    System.out.println("Column family: " + Bytes.toString(family) +
-                            ", Qualifier: " + Bytes.toString(qualifier) +
-                            ", Value: " + Bytes.toString(value));
-                }
+                if(!transactionWentThrough)
+                    System.out.println("Not enough balance to buy this stock");
             }
-
-            // Close the table and connection when done
-            table.close();
-            connection.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+    }
+
+    private static long getBalance(Table table, String username, String columnFamily, String qualifier) throws IOException {
+        return table.get(new Get(Bytes.toBytes(username)))
+                .getValue(Bytes.toBytes(columnFamily), Bytes.toBytes(qualifier)) != null ?
+                Bytes.toLong(table.get(new Get(Bytes.toBytes(username)))
+                        .getValue(Bytes.toBytes(columnFamily), Bytes.toBytes(qualifier))) : 0;
     }
 }
