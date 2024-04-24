@@ -1,0 +1,17 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+	implementation group: 'org.apache.hbase', name: 'hbase-common', version: '2.5.8'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'Application'
+    }
+}
