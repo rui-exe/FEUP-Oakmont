@@ -1,17 +1,34 @@
 plugins {
     id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
 }
+
+def hadoopVersion = project.findProperty("hadoopVersion") ?: "3.2.2"
+def hbaseVersion = project.findProperty("hbaseVersion") ?: "2.5.8"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-	implementation group: 'org.apache.hbase', name: 'hbase-common', version: '2.5.8'
+    implementation "org.apache.hadoop:hadoop-common:${hadoopVersion}"
+    implementation "org.apache.hbase:hbase:${hbaseVersion}"
+    implementation "org.apache.hbase:hbase-common:${hbaseVersion}"
+    implementation "org.apache.hbase:hbase-client:${hbaseVersion}"
+    implementation "org.apache.hbase:hbase-server:${hbaseVersion}"
 }
 
 jar {
     manifest {
-        attributes 'Main-Class': 'Application'
+        attributes 'Main-Class': 'application.Application'
     }
+}
+
+shadowJar {
+    project.configurations.implementation.canBeResolved = true
+    configurations = [project.configurations.implementation]
+    archiveBaseName.set("hbase-client")
+    archiveClassifier.set('')
+    archiveVersion.set('')
+    mergeServiceFiles()
 }

@@ -1,9 +1,10 @@
-FROM gradle:4.7.0-jdk8-alpine AS build
+FROM gradle:7.1.0-jdk11 AS build
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
-RUN gradle build --no-daemon 
+RUN gradle shadowjar --no-daemon 
 
-FROM openjdk:8-jre-slim
+FROM eclipse-temurin:11
 RUN mkdir /app
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/
+COPY --from=build /home/gradle/src/build/libs/*.jar /app/hbase-client.jar
+WORKDIR /app
 CMD ["java", "-jar", "/app/hbase-client.jar"]

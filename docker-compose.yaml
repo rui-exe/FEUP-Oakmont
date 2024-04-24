@@ -19,6 +19,17 @@ services:
     volumes:
       - ./database/data:/data
 
+  hbase-client:
+    build:
+      context: hbase-client
+      dockerfile: Dockerfile
+    env_file:
+      - ./hbase-client/.env
+    networks:
+      - database
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
 
   backend:
     build:
