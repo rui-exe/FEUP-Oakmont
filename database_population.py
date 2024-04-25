@@ -187,7 +187,7 @@ def populate_trades(connection):
         time_executed = row['Filing Date']
         time_executed = convert_dmy_to_ymd(time_executed)
         time_offered = convert_dmy_to_ymd(time_offered)
-        trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": quantity, "price_per_item": price_per_item, "time_offered": time_offered})
+        trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": int(quantity * 100), "price_per_item": int(price_per_item * 100), "time_offered": time_offered})
         if username not in data_trades:
             data_trades[username] = {}
         
@@ -223,8 +223,8 @@ def populate_portfolio(connection):
         username = user.decode('utf-8')
         row_key = f'{username}_{symbol}'
         
-        table.counter_set(row_key.encode('utf-8'), b'positions:quantity', int(quantity*100))
-        table.counter_set(row_key.encode('utf-8'), b'positions:money_invested', int(money_invested*100))
+        table.counter_set(row_key.encode('utf-8'), b'positions:quantity', quantity)
+        table.counter_set(row_key.encode('utf-8'), b'positions:money_invested', money_invested)
 
 
 def delete_old_score(connection, symbol, old_score):
@@ -253,6 +253,7 @@ def populate_popularity_to_instrument(connection):
 
             #calculate the timestamp score based on the number of years since 2020 plus the cost of the trade (/ (3600*24*365) converts to years)
             timestamp = ((date_time_obj - reference_date).total_seconds() + cost_of_trade) / (3600*24*365)
+            # (int(timestamp) gives the number of years since 2020)
             score = int(timestamp * 10 ** int(timestamp))
 
             table = connection.table('financial_instruments')
@@ -262,9 +263,14 @@ def populate_popularity_to_instrument(connection):
             table.counter_set(symbol.encode('utf-8'), b'info:popularity', score)
             score = sys.maxsize - score
 
+            #get the symbol information
+            symbol_info = table.row(symbol.encode('utf-8'))
+            
             row_key = f"{score}_{symbol}"
             data[row_key.encode("utf-8")] = {
-                b'cf1:val': b'1',
+                b'info:name': symbol_info[b'info:name'],
+                b'info:currency': symbol_info[b'info:currency'],
+                b'info:image': symbol_info[b'info:image'],
             }
             
 

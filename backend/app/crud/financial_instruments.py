@@ -33,3 +33,17 @@ def get_instrument_prices(db:Connection, symbol:str, start_date:datetime, end_da
             "value": data[b'series:val'].decode('utf-8')
         })
     return ticks
+
+def get_popular_symbols(db:Connection) -> list[FinancialInstrument]:
+    popular_symbols = db.table("popularity_to_instrument")
+    symbols = []
+    #get the top 10 and the infor from the popularity table
+    for key, data in popular_symbols.scan(limit=10):
+        symbol = key.decode('utf-8').split("_")[1]
+        name = data[b'info:name'].decode('utf-8')
+        currency = data[b'info:currency'].decode('utf-8')
+        image = data[b'info:image'].decode('utf-8')
+        symbols.append({"symbol":symbol,"name": name, "currency": currency, "image": image})
+            
+    return symbols
+

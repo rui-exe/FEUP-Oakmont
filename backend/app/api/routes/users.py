@@ -113,3 +113,11 @@ def add_user_balance(current_user: CurrentUser, balance_increase: BalanceIncreas
   """
   crud_users.add_user_balance(db=db,user=current_user,balance_increase=balance_increase.amount)
   return {"message": f"Successfully added {balance_increase.amount} to {current_user.username}'s balance."}
+
+@router.delete("/{username}/follow")
+def unfollow_user(db:HBase, current_user:CurrentUser, username:str = Path(...,description="Username of the user to unfollow")):
+  """
+  Unfollow a user.
+  """
+  return crud_users.unfollow_user(db=db, follower=current_user.username, followee=username)
+
