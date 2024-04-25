@@ -43,9 +43,16 @@ def create_tables():
     # Create table User
     user_table_name = 'user'
     if user_table_name.encode() not in connection.tables():
-        families = {'info': {}, 'posts': {}, 'following': {}, 'followers': {},'trades': {}, 'portfolio': {}}
+        families = {'info': {}, 'posts': {}, 'following': {}, 'followers': {},'trades': {}}
         connection.create_table(user_table_name, families)
         print(f"Table '{user_table_name}' created.")
+
+    # Create table Portfolio
+    portfolio_table_name = 'portfolio'
+    if portfolio_table_name.encode() not in connection.tables():
+        families = {'positions': {}}
+        connection.create_table(portfolio_table_name, families)
+        print(f"Table '{portfolio_table_name}' created.")
 
     # Close the connection
     connection.close()

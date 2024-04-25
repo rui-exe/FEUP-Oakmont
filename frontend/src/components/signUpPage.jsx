@@ -12,6 +12,7 @@ export default function SignUpPage() {
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handlePasswordChange = (e) => setPassword(e.target.value);
   const [signUpSuccess, setSignUpSuccess] = useState(false);
+  const [error, setError] = useState(null); // State for error message
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,6 +36,7 @@ export default function SignUpPage() {
         // Handle successful sign-up, e.g., redirect to sign-in page
         console.log("User signed up successfully!");
         setSignUpSuccess(true);
+        setError(null);
         // Clear form fields
         setName("");
         setUsername("");
@@ -45,6 +47,7 @@ export default function SignUpPage() {
         console.error("Sign-up failed");
         const data = await response.json();
         console.error(data);
+        setError(data.detail);
         // Clear the password field
         setPassword("");
       }
@@ -64,6 +67,14 @@ export default function SignUpPage() {
             <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded relative bottom-2">
               <strong className="font-bold">Success!</strong>
               <span className="block sm:inline"> You have signed up successfully.</span>
+              <span className="absolute top-0 bottom-0 right-0 px-4 py-3">
+              </span>
+            </div>
+          )}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded relative bottom-2">
+              <strong className="font-bold">Error!</strong>
+              <span className="block sm:inline"> {error}</span>
               <span className="absolute top-0 bottom-0 right-0 px-4 py-3">
               </span>
             </div>

@@ -7,6 +7,8 @@ import random
 import time
 import json
 from passlib.context import CryptContext
+import math
+import sys
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -51,13 +53,15 @@ def populate_table(connection, table_name, data):
         for row, columns in data.items():
             batch.put(row, columns)
 
-def convert_yfinance_symbol_info_to_hbase_dict(symbol,currency,longName, website):
+def convert_yfinance_symbol_info_to_hbase_dict(connection,symbol,currency,longName, website):
     data = dict()
     data[symbol.encode("utf-8")] = {
             b'info:name': longName.encode('utf-8'),
             b'info:currency': currency.encode('utf-8'),
             b'info:image': f'https://logo.clearbit.com/{website}'.encode('utf-8'),
     }
+    table = connection.table('financial_instruments')
+    table.counter_set(symbol.encode('utf-8'), b'info:popularity', 0)
     return data
 
 def convert_yfinance_price_history_to_hbase_dict(symbol,yahoo_df):
@@ -147,7 +151,7 @@ def populate_financial_instruments(connection,symbols):
 
             
             currency, longName, website = get_symbol_info(ticker)
-            symbol_info = convert_yfinance_symbol_info_to_hbase_dict(symbol,currency,longName, website)
+            symbol_info = convert_yfinance_symbol_info_to_hbase_dict(connection, symbol,currency,longName, website)
             populate_table(connection, 'financial_instruments', symbol_info)
 
             symbol_historical = get_historical_data_daily(ticker)
@@ -193,7 +197,6 @@ def populate_trades(connection):
 def populate_portfolio(connection):
     users_table = connection.table('user').scan(columns=[b'trades'])
     users = list(users_table)
-    data = dict()
     for user, trades in users:
         user_stocks = {}
         for date, trade in trades.items():
@@ -214,27 +217,45 @@ def populate_portfolio(connection):
             if quantity < 0 or money_invested < 0:
                 delete_trades_from_user(connection, symbol, user)
                 del user_stocks[symbol]
-        
-        user_stocks_json = json.dumps({symbol: {"quantity": quantity, "money_invested": money_invested} for symbol, (quantity, money_invested) in user_stocks.items()})
 
-        for symbol, value in json.loads(user_stocks_json).items():
-            if user not in data:
-                data[user] = {}
-            data[user][f'portfolio:{symbol}'.encode('utf-8')] = json.dumps(value).encode('utf-8')
+        table = connection.table('portfolio')
+        table.counter_set(f'{user}_{symbol}'.encode('utf-8'), b'positions:quantity', int(quantity*100))
+        table.counter_set(f'{user}_{symbol}'.encode('utf-8'), b'positions:money_invested', int(money_invested*100))
 
-    populate_table(connection, 'user', data)
 
 
 def populate_popularity_to_instrument(connection):
-    #get all the trades from all the users
+
     users_table = connection.table('user').scan(columns=[b'trades'])
     users = list(users_table)
+    reference_date = datetime.datetime.strptime("2020-01-01 00:00", '%Y-%m-%d %H:%M')
     for user, trades in users:
-        for date, trade in trades.items():
+        for date, trade in trades.items():    
+            data = dict()
             date = date.decode('utf-8').split(":")[1]
-            date = int(datetime.datetime.strptime(date + ':00', '%Y-%m-%d %H:%M').timestamp())
+            date_time_obj = datetime.datetime.strptime(date + ':00', '%Y-%m-%d %H:%M')
 
-        break
+            #get the trade information
+            trade = json.loads(trade.decode('utf-8'))
+            symbol, quantity = trade['symbol'], float(trade['quantity'])
+            price = float(trade['price_per_item'])
+            cost_of_trade = quantity * price / 100
+
+            #calculate the timestamp score based on the number of years since 2020 plus the cost of the trade (/ (3600*24*365) converts to years)
+            timestamp = ((date_time_obj - reference_date).total_seconds() + cost_of_trade) / (3600*24*365)
+            score = int(timestamp * 10 ** int(timestamp))
+
+            table = connection.table('financial_instruments')
+            score += table.counter_get(symbol.encode('utf-8'), b'info:popularity')
+
+            table.counter_set(symbol.encode('utf-8'), b'info:popularity', score)
+            score = sys.maxsize - score
+
+            row_key = f"{score}_{symbol}"
+            data[row_key.encode("utf-8")] = {
+                b'cf1:val': b'1',
+            }
+            populate_table(connection, 'popularity_to_instrument', data)
             
 def read_symbols_from_csv(file_name,column_name):
     symbols = []
@@ -266,13 +287,30 @@ def populate_tables():
     symbols = list(set(symbols))
     
     
-    populate_financial_instruments(connection,symbols)
-    populate_users(connection)
-    populate_following(connection)
-    populate_posts(connection)
-    populate_trades(connection)
-    populate_portfolio(connection)
+    #populate_financial_instruments(connection,symbols)
+    #populate_users(connection)
+    #populate_following(connection)
+    #populate_posts(connection)
+    #populate_trades(connection)
+    #populate_portfolio(connection)
     #populate_popularity_to_instrument(connection)
+
+    #raed the table portfolio and print the number of stocks and the total money invested
+    portfolio_table = connection.table('portfolio')
+    portfolio = list(portfolio_table.scan())
+    for row in portfolio:
+        print(row)
+    
+
+    #read the follower of every user
+    user_table = connection.table('user')
+    users = list(user_table.scan())
+    #get the column following from the column family info
+    for user in users:
+        following = user_table.row(user[0], columns=[b'info:following'])
+        print(following)
+        break
+
 
 if __name__ == "__main__":
     populate_tables()
