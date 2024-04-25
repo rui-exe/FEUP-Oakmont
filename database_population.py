@@ -219,8 +219,12 @@ def populate_portfolio(connection):
                 del user_stocks[symbol]
 
         table = connection.table('portfolio')
-        table.counter_set(f'{user}_{symbol}'.encode('utf-8'), b'positions:quantity', int(quantity*100))
-        table.counter_set(f'{user}_{symbol}'.encode('utf-8'), b'positions:money_invested', int(money_invested*100))
+        
+        username = user.decode('utf-8')
+        row_key = f'{username}_{symbol}'
+        
+        table.counter_set(row_key.encode('utf-8'), b'positions:quantity', int(quantity*100))
+        table.counter_set(row_key.encode('utf-8'), b'positions:money_invested', int(money_invested*100))
 
 
 def delete_old_score(connection, symbol, old_score):
