@@ -10,7 +10,7 @@ from app.api.deps import (
     CurrentUser,
     HBase,
 )
-from app.models.users import (UserCreate, UserPublic)
+from app.models.users import (UserCreate, UserPublic, BalanceIncrease)
 from app.models.trades import TradePublic
 
 router = APIRouter()
@@ -104,3 +104,12 @@ def follow_user(db:HBase, current_user:CurrentUser, username:str = Path(...,desc
   """
   return crud_users.follow_user(db=db, follower=current_user.username, followee=username)
 
+
+
+@router.patch("/me/balance")
+def add_user_balance(current_user: CurrentUser, balance_increase: BalanceIncrease, db: HBase):
+  """
+  Add balance to a user's account.
+  """
+  crud_users.add_user_balance(db=db,user=current_user,balance_increase=balance_increase.amount)
+  return {"message": f"Successfully added {balance_increase.amount} to {current_user.username}'s balance."}

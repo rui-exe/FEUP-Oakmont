@@ -71,9 +71,16 @@ def get_user_by_username(*, db: Connection, username: str) -> User | None:
     user_data["nr_following"] = users.counter_get(username.encode("utf-8"),b"info:following")
   if b"info:followers" in user_in_db:
     user_data["nr_followers"] = users.counter_get(username.encode("utf-8"),b"info:followers")
-
+  if b"info:balance" in user_in_db:
+    user_data["balance"] = users.counter_get(username.encode("utf-8"),b"info:balance")
 
   return User(**user_data)
+
+def add_user_balance(*, db:Connection, user:User, balance_increase:float)->None:  
+  users = db.table("user")
+  users.counter_inc(user.username.encode("utf-8"),b'info:balance',value=int(balance_increase*100))
+  
+  
 
 
 def authenticate(*, db: Connection, username: str,

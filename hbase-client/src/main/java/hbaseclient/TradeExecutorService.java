@@ -72,7 +72,7 @@ public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBas
         jsonTrade.put("type", trade.getType().name());
         jsonTrade.put("symbol", trade.getSymbol());
         jsonTrade.put("quantity", trade.getQuantity());
-        jsonTrade.put("price_per_item", trade.getSymbol());
+        jsonTrade.put("price_per_item", trade.getPricePerItem());
         jsonTrade.put("time_offered", trade.getTimeOffered());
         return jsonTrade;
     }

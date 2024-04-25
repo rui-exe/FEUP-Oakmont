@@ -2,6 +2,7 @@
   This file contains the Pydantic models for the Trade entity.
 """
 from pydantic import BaseModel, ValidationError, validator
+from fastapi import HTTPException
 from datetime import datetime
 from enum import Enum
 
@@ -17,7 +18,7 @@ class TradeCreate(BaseModel):
     @validator('price_per_item')
     def check_decimal_places(cls, value):
         if value != round(value, 2):
-            raise ValidationError("Price must have at most 2 decimal places")
+          raise HTTPException(status_code=422, detail="Price per item must have at most 2 decimal places")
         return value
     
 class TradePublic(TradeCreate):
