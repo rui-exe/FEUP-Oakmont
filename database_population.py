@@ -249,6 +249,7 @@ def populate_popularity_to_instrument(connection):
 
             #calculate the timestamp score based on the number of years since 2020 plus the cost of the trade (/ (3600*24*365) converts to years)
             timestamp = ((date_time_obj - reference_date).total_seconds() + cost_of_trade) / (3600*24*365)
+            # (int(timestamp) gives the number of years since 2020)
             score = int(timestamp * 10 ** int(timestamp))
 
             table = connection.table('financial_instruments')
@@ -258,9 +259,14 @@ def populate_popularity_to_instrument(connection):
             table.counter_set(symbol.encode('utf-8'), b'info:popularity', score)
             score = sys.maxsize - score
 
+            #get the symbol information
+            symbol_info = table.row(symbol.encode('utf-8'))
+            
             row_key = f"{score}_{symbol}"
             data[row_key.encode("utf-8")] = {
-                b'cf1:val': b'1',
+                b'info:name': symbol_info[b'info:name'],
+                b'info:currency': symbol_info[b'info:currency'],
+                b'info:image': symbol_info[b'info:image'],
             }
             
 
