@@ -12,6 +12,8 @@ import sys
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+MAX_LONG = 2 ** 63 - 1
+
 def get_password_hash(password: str) -> str:
   """
   Hash a password.
@@ -152,6 +154,8 @@ def populate_financial_instruments(connection,symbols):
             
             currency, longName, website = get_symbol_info(ticker)
             symbol_info = convert_yfinance_symbol_info_to_hbase_dict(connection, symbol,currency,longName, website)
+            table = connection.table('financial_instruments')
+            table.counter_set(symbol.encode('utf-8'), b'info:popularity', MAX_LONG)
             populate_table(connection, 'financial_instruments', symbol_info)
 
             symbol_historical = get_historical_data_daily(ticker)
@@ -230,9 +234,11 @@ def populate_portfolio(connection):
 def delete_old_score(connection, symbol, old_score):
     table = connection.table('popularity_to_instrument')
     try:
-        table.delete(f"{(2**63 - 1) - old_score}_{symbol}".encode('utf-8'))
+        table.delete(f"{old_score}_{symbol}".encode('utf-8'))
     except:
         pass
+
+
 
 def populate_popularity_to_instrument(connection):
 
@@ -249,20 +255,20 @@ def populate_popularity_to_instrument(connection):
             trade = json.loads(trade.decode('utf-8'))
             symbol, quantity = trade['symbol'], int(trade['quantity'])
             price = int(float(trade['price_per_item']))
-            cost_of_trade = quantity * price / 10000
+            cost_of_trade = quantity * price / 100
 
-            #calculate the timestamp score based on the number of years since 2020 plus the cost of the trade (/ (3600*24*365) converts to years)
-            timestamp = ((date_time_obj - reference_date).total_seconds() + cost_of_trade) / (3600*24*365)
-            # (int(timestamp) gives the number of years since 2020)
-            score = int(timestamp * 10 ** int(timestamp))
-
+            # double the score every 30 days and one for each order of maginute of cost_of_trade increase the order of magnitude of the score
+            timestamp = ((date_time_obj - reference_date).total_seconds()) / (3600*24*30)
+            score = int((cost_of_trade * 2 ** timestamp) / 1000000000)
+            """
+            timestamp = ((date_time_obj - reference_date).total_seconds()) / (3600*24*12)
+            score = int(((cost_of_trade ** 0.5 * timestamp ** 20) ** 0.5) / 1000000000000)
+            """
             table = connection.table('financial_instruments')
-            old_score = table.counter_get(symbol.encode('utf-8'), b'info:popularity')
-            delete_old_score(connection, symbol, old_score)
-            score += old_score      
-            table.counter_set(symbol.encode('utf-8'), b'info:popularity', score)
-            score = (2**63-1) - score
-
+            new_reverse_score = table.counter_inc(symbol.encode('utf-8'), b'info:popularity', -score)
+            
+            old_reverse_score = new_reverse_score + score
+            delete_old_score(connection, symbol, old_reverse_score)
             #get the symbol information
             symbol_info = table.row(symbol.encode('utf-8'))
             
@@ -273,8 +279,6 @@ def populate_popularity_to_instrument(connection):
                 b'info:image': symbol_info[b'info:image'],
             }
             
-
-
             populate_table(connection, 'popularity_to_instrument', data)
             
 def read_symbols_from_csv(file_name,column_name):

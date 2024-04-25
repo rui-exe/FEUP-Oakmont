@@ -126,7 +126,7 @@ public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBas
     }
 
     public static long calculateTradeScore(Trade trade){
-        long costOfTrade = (trade.getQuantity()*trade.getQuantity())/1000;
+        long costOfTrade = (trade.getQuantity()*trade.getPricePerItem())/100;
         String myDate = "2020/01/01 00:00:00";
         LocalDateTime localDateTime = LocalDateTime.parse(myDate,
                 DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss") );
@@ -136,17 +136,17 @@ public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBas
                 .toInstant().toEpochMilli();
 
         long secondsSince2020 = trade.getTimeExecuted()/1000 - millis2020/1000;
-        double x = (double) (costOfTrade + secondsSince2020) /(3600*24*365);
-        return (long) (x * Math.pow(10,((long) x)));
+        long x = (long) ((secondsSince2020) /(3600*24*30));
+        return (long) ((costOfTrade * Math.pow(2, x)) / 1000000000);
     }
 
     private void updatePopularity(Trade trade) throws IOException{
         long tradeScore = calculateTradeScore(trade);
-        long newScore = financialInstrumentsTable.incrementColumnValue(
+        long newReverseScore = financialInstrumentsTable.incrementColumnValue(
                 Bytes.toBytes(trade.getUsername()),
                 Bytes.toBytes(financialInstrumentInfoCF),
                 Bytes.toBytes(popularityQualifier),
-                tradeScore
+                -tradeScore
         );
         Get getFinancialInstrumentInfo = new Get(Bytes.toBytes(trade.getSymbol()));
 
@@ -161,13 +161,12 @@ public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBas
         byte[] nameBytes = financialInstrumentInfo.getValue(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(nameQualifier));
         byte[] currencyBytes = financialInstrumentInfo.getValue(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(currencyQualifier));
         byte[] imageBytes = financialInstrumentInfo.getValue(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(imageQualifier));
+        
+        long oldReverseScore = newReverseScore + tradeScore;
+    
 
-        long oldScore = newScore-tradeScore;
-        long reverseOldScore = Long.MAX_VALUE-oldScore;
-        long reverseNewScore = Long.MAX_VALUE-newScore;
-
-        String oldScoreKey = reverseOldScore+"_"+trade.getSymbol();
-        String newScoreKey = reverseNewScore+"_"+trade.getSymbol();
+        String oldScoreKey = oldReverseScore+"_"+trade.getSymbol();
+        String newScoreKey = newReverseScore+"_"+trade.getSymbol();
         Delete deleteOldScore = new Delete(Bytes.toBytes(oldScoreKey));
         Put createNewScore = new Put(Bytes.toBytes(newScoreKey));
 
