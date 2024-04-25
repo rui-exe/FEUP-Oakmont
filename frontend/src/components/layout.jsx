@@ -4,27 +4,29 @@ import { Link } from 'react-router-dom'; // Assuming you're using React Router
 const Layout = ({ children }) => {
   return (
     <div>
-      <header className="px-4 lg:px-6 h-14 flex items-center">
-        <Link className="flex items-center justify-center" href="#">
-          <CatIcon className="h-6 w-6" />
-          <span className="font-bold text-lg ml-2">FEUP Oakmont</span>
+      <header className="px-4 lg:px-6 h-16 flex items-center">
+        <Link to="/" className="flex items-center justify-center" href="#">
+          <img src="/logo.jpg" alt="FEUP Oakmont" className="h-12 w-auto rounded-full" />
+          <span className="font-bold text-2xl ml-2 font-serif">FEUP OAKMONT</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
+          <Link to="/" className="text-sm font-medium hover:underline underline-offset-4" href="#">
             Home
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
             Popular
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            About
+            Sign in
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Contact
+            Sign up
           </Link>
         </nav>
       </header>
-      {children}
+      <div className="bg-gray-200 min-h-screen flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        {children}
+      </div>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <p className="text-xs text-black-500 dark:text-black-400">© 2024 FEUP Oakmont. All rights reserved.</p>
       </footer>

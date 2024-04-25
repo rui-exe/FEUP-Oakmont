@@ -10,6 +10,7 @@ const App = () => {
       <Layout>
         <Routes>
           <Route path="/users/:username" element={<Profile />} />
+          <Route path="/" element={<h1>Home</h1>} />
         </Routes>
       </Layout>
     </Router>
