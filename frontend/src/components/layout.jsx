@@ -13,13 +13,10 @@ const Layout = ({ children }) => {
           <Link to="/" className="text-sm font-medium hover:underline underline-offset-4" href="#">
             Home
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Popular
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
+          <Link to="/sign-in" className="text-sm font-medium hover:underline underline-offset-4" href="#">
             Sign in
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
+          <Link to="/sign-up" className="text-sm font-medium hover:underline underline-offset-4" href="#">
             Sign up
           </Link>
         </nav>
