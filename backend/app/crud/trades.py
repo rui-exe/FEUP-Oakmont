@@ -1,8 +1,9 @@
 from happybase import Connection
-from app.models.trades import Trade,Position,TradeType
+from app.models.trades import TradePublic,Position
 import json
 from datetime import datetime
-def get_user_trades(db:Connection, username:str)->list[Trade]:
+
+def get_user_trades(db:Connection, username:str)->list[TradePublic]:
     user_table = db.table("user")
     trades = []
     for key,data in user_table.row(username.encode("utf-8"),columns=[b"trades"]).items():

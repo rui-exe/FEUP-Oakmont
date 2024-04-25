@@ -11,8 +11,10 @@ from pydantic import ValidationError
 from app.core.config import settings
 from app.models.users import User
 from app.models.tokens import TokenPayload
-import happybase
 import app.crud.users as crud_users
+import happybase
+import grpc
+from app.hbase_client.hbase_client_pb2_grpc import TradeExecutorStub
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="/oauth/token")
 
@@ -21,7 +23,7 @@ def get_hbase_connection() -> Generator[happybase.Connection, None, None]:
   """
     Get a HBase session
   """
-  connection =  happybase.Connection(host=settings.HBASE_HOST, port=settings.HBASE_PORT)
+  connection =  happybase.Connection(host=settings.THRIFT_HOST, port=settings.THRIFT_PORT)
   yield connection
   connection.close()
 
@@ -50,3 +52,10 @@ def get_current_user(db: HBase, token: OAuth2Token) -> User:
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def get_trade_executor_stub():
+  with grpc.insecure_channel(f"{settings.HBASE_CLIENT_HOST}:{settings.HBASE_CLIENT_PORT}") as channel:
+      yield TradeExecutorStub(channel)
+    
+TradeExecutor = Annotated[TradeExecutorStub, Depends(get_trade_executor_stub)]

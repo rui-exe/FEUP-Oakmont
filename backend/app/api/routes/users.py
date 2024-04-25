@@ -11,7 +11,7 @@ from app.api.deps import (
     HBase,
 )
 from app.models.users import (UserCreate, UserPublic)
-from app.models.trades import Trade
+from app.models.trades import TradePublic
 
 router = APIRouter()
 
@@ -69,7 +69,7 @@ def get_user_posts(db:HBase, username:str):
 
 
 @router.get("/{username}/trades")
-def get_user_trades(db:HBase, username:str) -> list[Trade]:
+def get_user_trades(db:HBase, username:str) -> list[TradePublic]:
   """
   Get the trades of a user.
   """

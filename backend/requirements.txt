@@ -7,3 +7,5 @@ python-dotenv
 python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
+grpcio
+protobuf

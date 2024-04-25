@@ -70,7 +70,12 @@ public class HbaseClientServer {
     }
 
     public static void main(String[] args) throws Exception {
-        HbaseClientServer server = new HbaseClientServer(8980);
+        String portStr = System.getenv("HBASE_CLIENT_SERVER_PORT");
+        if (portStr == null || portStr.isEmpty()) {
+            throw new IllegalArgumentException("HBASE_CLIENT_SERVER_PORT environment variables are missing or empty.");
+        }
+        int port = Integer.parseInt(System.getenv("HBASE_CLIENT_SERVER_PORT"));
+        HbaseClientServer server = new HbaseClientServer(port);
         server.start();
         server.blockUntilShutdown();
     }
