@@ -104,3 +104,10 @@ def follow_user(db:HBase, current_user:CurrentUser, username:str = Path(...,desc
   """
   return crud_users.follow_user(db=db, follower=current_user.username, followee=username)
 
+@router.delete("/{username}/follow")
+def unfollow_user(db:HBase, current_user:CurrentUser, username:str = Path(...,description="Username of the user to unfollow")):
+  """
+  Unfollow a user.
+  """
+  return crud_users.unfollow_user(db=db, follower=current_user.username, followee=username)
+
