@@ -11,9 +11,48 @@ export default function SignUpPage() {
   const handleUsernameChange = (e) => setUsername(e.target.value);
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handlePasswordChange = (e) => setPassword(e.target.value);
-  const handleSubmit = (e) => {
+  const [signUpSuccess, setSignUpSuccess] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Implement your sign-up logic here
+    try {
+      const userData = {
+        name,
+        username,
+        email,
+        password
+      };
+
+      const response = await fetch("http://localhost:8081/users/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (response.ok) {
+        // Handle successful sign-up, e.g., redirect to sign-in page
+        console.log("User signed up successfully!");
+        setSignUpSuccess(true);
+        // Clear form fields
+        setName("");
+        setUsername("");
+        setEmail("");
+        setPassword("");
+      } else {
+        // Handle sign-up failure, e.g., display error message
+        console.error("Sign-up failed");
+        const data = await response.json();
+        console.error(data);
+        // Clear the password field
+        setPassword("");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      // Clear the password field
+      setPassword("");
+    }
   };
 
   return (
@@ -21,6 +60,14 @@ export default function SignUpPage() {
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
         <div className="p-6 sm:p-8">
           <h1 className="text-2xl font-bold mb-4">Sign Up</h1>
+          {signUpSuccess && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded relative bottom-2">
+              <strong className="font-bold">Success!</strong>
+              <span className="block sm:inline"> You have signed up successfully.</span>
+              <span className="absolute top-0 bottom-0 right-0 px-4 py-3">
+              </span>
+            </div>
+          )}
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-medium" htmlFor="name">
