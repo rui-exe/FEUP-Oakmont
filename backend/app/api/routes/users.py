@@ -61,11 +61,11 @@ def delete_user(db: HBase, current_user: CurrentUser,
 
 
 @router.get("/{username}/posts")
-def get_user_posts(db:HBase, username:str):
+def get_user_posts(db:HBase, username:str, begin:int = 0):
   """
-  Get the posts of a user.
+  Get the posts of a user, 10 at a time.
   """
-  return crud_posts.get_user_posts(db, username)
+  return crud_posts.get_user_posts(db, username, begin)
 
 
 @router.get("/{username}/trades")

@@ -119,7 +119,6 @@ def get_user_followers(*, db: Connection, username: str) -> list[str]:
         # iterate all the columns of the followers column family of the user
         followers_column_family = 'followers'
         followers_data = table.row(username.encode('utf-8'), columns=[f'{followers_column_family}'.encode('utf-8')])
-        print(followers_data)
         followers = [follower.decode('utf-8').replace(followers_column_family+':', '') for follower, _ in followers_data.items()]
         return followers
     except Exception as e:
@@ -145,8 +144,6 @@ def get_user_following(*, db: Connection, username: str) -> list[str]:
         # iterate all the columns of the following column family of the user
         following_column_family = 'following'
         following_data = table.row(username.encode('utf-8'), columns=[f'{following_column_family}'.encode('utf-8')])
-        print(following_data)
-        print(following_data)
         following_users = [following.decode('utf-8').replace(following_column_family+':', '') for following, _ in following_data.items()]
         return following_users
     except Exception as e:

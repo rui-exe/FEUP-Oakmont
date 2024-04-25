@@ -23,12 +23,19 @@ async def get_financial_instruments_with_params(
 ) -> list[Tick]:
     return financial_instruments_crud.get_instrument_prices(db, symbol, start_date, end_date, interval)
 
+@router.get("/{symbol}/info")
+async def get_finstrument_info(db:HBase, symbol:str = Path(..., description="Symbol of the financial instrument")):
+  """
+  Get the info of a financial instrument
+  """
+  return financial_instruments_crud.get_symbol_info(db, symbol)
+
 @router.get("/{symbol}/posts")
-def get_symbol_posts(db:HBase, symbol:str = Path(..., description="Symbol of the financial instrument")):
+def get_symbol_posts(db:HBase, symbol:str = Path(..., description="Symbol of the financial instrument"), begin:int=Query(0,description="Begining of the posts")):
   """
-  Get the posts of a symbol
+  Get the posts of a symbol, 10 at a time
   """
-  return crud_posts.get_symbol_posts(db, symbol)
+  return crud_posts.get_symbol_posts(db, symbol, begin)
 
 @router.post("/{symbol}/posts")
 def create_new_post(db: HBase, current_user: CurrentUser, symbol: str = Path(..., description="Symbol of the financial instrument"), text: str = Query(..., description="Text of the post")):

@@ -18,14 +18,13 @@ def get_user_trades(db:Connection, username:str)->list[TradePublic]:
         data = json.loads(data)
         time_executed_reverse_ms = java_long_to_number(key[len("trades:"):])
         time_executed_ms = LONG_MAX-time_executed_reverse_ms
-        time_offered_ms = data["time_offered"]
 
+        print(data)
         trade = {
             "type": "buy" if data["type"]=="P" else "sell",
             "symbol": data["symbol"],
             "quantity": data["quantity"],
             "price_per_item": data["price_per_item"]/100,
-            "time_offered": datetime.fromtimestamp(int(time_offered_ms/1000)),
             "time_executed": datetime.fromtimestamp(int(time_executed_ms/1000))
         }
         trades.append(trade)

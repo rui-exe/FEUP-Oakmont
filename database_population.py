@@ -9,6 +9,7 @@ import json
 from passlib.context import CryptContext
 import math
 import sys
+import struct
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -23,6 +24,14 @@ def get_password_hash(password: str) -> str:
     str: The hashed password
   """
   return pwd_context.hash(password)
+
+def number_to_java_long(number):
+    java_long = struct.pack('>q', number)
+    return java_long 
+def java_long_to_number(java_long):
+    # Unpack the Java long to a signed 64-bit integer
+    number = struct.unpack('>q', java_long)[0]
+    return number
 
 def wait_for_hbase():
     while True:
@@ -189,13 +198,15 @@ def populate_trades(connection):
         time_offered = row['Trade Date']
         time_offered = time_offered + " " + str(random.randint(0,23)) + ":" + str(random.randint(0,59))
         time_executed = row['Filing Date']
-        time_executed = convert_dmy_to_ymd(time_executed)
-        time_offered = convert_dmy_to_ymd(time_offered)
-        trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": int(float(quantity)), "price_per_item": int(float(price_per_item)* 100), "time_offered": time_offered})
+        time_executed = MAX_LONG - convert_dmy_to_milliseconds(time_executed)
+        time_executed = number_to_java_long(time_executed)
+        time_offered = convert_dmy_to_milliseconds(time_offered)
+        time_offered = number_to_java_long(time_offered)
+        trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": int(float(quantity)), "price_per_item": int(float(price_per_item)* 100), "time_offered": str(time_offered)})
         if username not in data_trades:
             data_trades[username] = {}
         
-        data_trades[username][f'trades:{time_executed}'.encode('utf-8')] = trade_json.encode('utf-8')
+        data_trades[username][b'trades:' + time_executed] = trade_json.encode('utf-8')
     populate_table(connection, 'user', data_trades)
 
 def populate_portfolio(connection):
@@ -203,8 +214,7 @@ def populate_portfolio(connection):
     users = list(users_table)
     for user, trades in users:
         user_stocks = {}
-        for date, trade in trades.items():
-            date = date.decode('utf-8')
+        for _, trade in trades.items():
             trade = json.loads(trade.decode('utf-8'))
             symbol = trade['symbol']
             quantity = int(trade['quantity'])
@@ -248,11 +258,13 @@ def populate_popularity_to_instrument(connection):
     for user, trades in users:
         for date, trade in trades.items():    
             data = dict()
-            date = date.decode('utf-8').split(":")[1]
-            date_time_obj = datetime.datetime.strptime(date + ':00', '%Y-%m-%d %H:%M')
+            time_executed_reverse_ms = java_long_to_number(date[len("trades:"):])
+            time_executed_ms = MAX_LONG-time_executed_reverse_ms
+            date_time_obj = datetime.datetime.fromtimestamp(int(time_executed_ms/1000))
 
             #get the trade information
             trade = json.loads(trade.decode('utf-8'))
+            print(trade)
             symbol, quantity = trade['symbol'], int(trade['quantity'])
             price = int(float(trade['price_per_item']))
             cost_of_trade = quantity * price / 100
@@ -289,8 +301,8 @@ def read_symbols_from_csv(file_name,column_name):
             symbols.append(row[column_name])
     return symbols    
 
-def convert_dmy_to_ymd(date):
-    return datetime.datetime.strptime(date, '%d/%m/%Y %H:%M').strftime('%Y-%m-%d %H:%M')
+def convert_dmy_to_milliseconds(date):
+    return int(datetime.datetime.strptime(date, '%d/%m/%Y %H:%M').timestamp() * 1000)
 
 def populate_tables():
     wait_for_hbase()

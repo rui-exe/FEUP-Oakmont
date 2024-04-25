@@ -3,9 +3,9 @@ from happybase import Connection
 from datetime import datetime
 import json
 
-def get_user_posts(db:Connection, username:str)->list[Post]:
+def get_user_posts(db:Connection, username:str,begin:int)->list[Post]:
     """
-    Get all posts of a user
+    Get 10 posts of a user
     """
     user_table = db.table("user")
     posts = []
@@ -19,11 +19,11 @@ def get_user_posts(db:Connection, username:str)->list[Post]:
             "timestamp": time_stamp[len("posts:"):],
             "text": data["post"]
         })
-    return posts
+    return posts[begin:begin+10]
 
-def get_symbol_posts(db:Connection, symbol:str)->list[Post]:
+def get_symbol_posts(db:Connection, symbol:str, begin:int)->list[Post]:
     """
-    Get all posts of a symbol
+    Get 10 posts of a symbol
     """
     symbol_table = db.table("financial_instruments")
     posts = []
@@ -37,7 +37,7 @@ def get_symbol_posts(db:Connection, symbol:str)->list[Post]:
             "timestamp": time_stamp[len("posts:"):],
             "text": data["post"]
         })
-    return posts
+    return posts[begin:begin+10]
 
 def create_new_post(db: Connection, post: dict) -> Post:
     """

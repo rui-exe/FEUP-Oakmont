@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import FollowersCard from '../cards/FollowersCard';
 import FollowingCard from '../cards/FollowingCard';
 import FollowButton from './followButton';
@@ -15,13 +15,19 @@ export default function Profile() {
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showMorePosts, setShowMorePosts] = useState(false);
   const [showMoreTrades, setShowMoreTrades] = useState(false);
   const [showFollowersCard, setShowFollowersCard] = useState(false); // New state for followers card visibility
   const [showFollowingCard, setShowFollowingCard] = useState(false); // New state for following card visibility
   const [followers, setFollowers] = useState([]); // New state for followers
   const [following, setFollowing] = useState([]); // New state for following status
+  const [begin, setBegin] = useState(0); // State to track the beginning index of posts
   const {isAuthenticated} = useAuth();
+  const scrollToRef = useRef(null);
+
+  const scrollToTarget = () => {
+    // Scroll to the target element
+    scrollToRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
 
   // Fetch user data when the component mounts or when username prop changes
@@ -47,21 +53,6 @@ export default function Profile() {
         setLoading(false); // Set loading state to false if there's an error
       }
     };
-
-    // Function to fetch posts
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch(`http://localhost:8081/users/${username}/posts`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch posts');
-        }
-        const postsData = await response.json();
-        setPosts(postsData);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      }
-    };
-
     // Function to fetch trades
     const fetchTrades = async () => {
       try {
@@ -75,11 +66,37 @@ export default function Profile() {
         console.error('Error fetching trades:', error);
       }
     };
-
     fetchUserData(); // Call the function to fetch user data
-    fetchPosts(); // Call the function to fetch posts
     fetchTrades(); // Call the function to fetch trades
-  }, [username]); // Run the effect whenever the username prop changes
+  }, [username]);
+
+  
+  // Fetch posts when the component mounts or when username prop changes
+  useEffect(() => {
+    // Function to fetch posts
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch(`http://localhost:8081/users/${username}/posts?begin=${begin}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch posts');
+        }
+        const postsData = await response.json();
+        setPosts(postsData);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      }
+    };
+    fetchPosts(); // Call the function to fetch posts
+  }, [username, begin]); // Fetch posts when the component mounts or when username prop changes
+
+  // Handle pagination
+  const handleNextPage = () => {
+    setBegin(prevBegin => prevBegin + 10); // Increment begin index by 100 for next page
+  };
+
+  const handlePreviousPage = () => {
+    setBegin(prevBegin => Math.max(0, prevBegin - 10)); // Decrement begin index by 100 for previous page
+  };
 
   // Fetch followers when the followers card is shown
   useEffect(() => {
@@ -142,11 +159,6 @@ export default function Profile() {
     );
   }
 
-  // Function to toggle the display of additional posts
-  const toggleShowMorePosts = () => {
-    setShowMorePosts(!showMorePosts);
-  };
-
   // Function to toggle the display of additional trades
   const toggleShowMoreTrades = () => {
     setShowMoreTrades(!showMoreTrades);
@@ -197,7 +209,7 @@ export default function Profile() {
             <div className="grid gap-4">
               {trades.slice(0, showMoreTrades ? trades.length : 5).map((trade, index) => (
                 <div key={index} className="bg-gray-100 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold">{trade.symbol}</h3>
+                  <h3 className="text-lg font-semibold"> <Link to={`/items/${trade.symbol}`}>{trade.symbol}</Link></h3>
                   <p className="text-black-500 mt-2">{new Date(trade.time_executed).toLocaleString()}</p>
                   <p className="text-gray-500 mt-2">{trade.type.toUpperCase()}: {trade.quantity} shares at {trade.price_per_item}$</p>
                 </div>
@@ -211,25 +223,44 @@ export default function Profile() {
           </div>
         </div>
         {/* Render posts */}
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          <div className="p-6 sm:p-8">
-            <h2 className="text-xl font-bold mb-4">Posts</h2>
-            <div className="grid gap-4">
-              {posts.slice(0, showMorePosts ? posts.length : 5).map((post, index) => (
-                <div key={index} className="bg-gray-100 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold">{post.symbol}</h3>
-                  <p className="text-black-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
-                  <p className="text-gray-500 mt-2">{post.text}</p>
+          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div className="p-6 sm:p-8">
+              <h2 ref={scrollToRef} className="text-xl font-bold mb-4">Posts</h2>
+              <div className="grid gap-4">
+                {posts.map((post, index) => (
+                  <div key={index} className="bg-gray-100 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold">
+                      <Link to={`/items/${post.symbol}`}>{post.symbol}</Link>
+                    </h3>
+                    <p className="text-black-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
+                    <p className="text-gray-500 mt-2">{post.text}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Pagination controls */}
+                <div className="mt-4 flex justify-center">
+                  <button
+                    className="mr-2 px-4 py-2 bg-gray-200 rounded-md"
+                    onClick={() => {
+                      handlePreviousPage();
+                      scrollToTarget();
+                    }}
+                    disabled={begin === 0}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-gray-200 rounded-md"
+                    onClick={() => {
+                      handleNextPage();
+                      scrollToTarget();
+                    }}
+                  >
+                    Next
+                  </button>
                 </div>
-              ))}
             </div>
-            {posts.length > 5 && (
-              <button onClick={toggleShowMorePosts} className="text-blue-500 hover:text-blue-700">
-                {showMorePosts ? 'Show less posts' : 'Show more posts'}
-              </button>
-            )}
           </div>
-        </div>
       </div>
       <FollowersCard followers={followers} showFollowersCard={showFollowersCard} toggleFollowersCard={toggleFollowersCard} />
       <FollowingCard following={following} showFollowingCard={showFollowingCard} toggleFollowingCard={toggleFollowingCard} />

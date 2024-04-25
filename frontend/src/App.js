@@ -3,6 +3,7 @@ import './styles/styles.css';
 import Profile from './components/profile';
 import SignInPage from './components/signInPage';
 import SignUpPage from './components/signUpPage';
+import FinancialInstrumentPage from './components/financialInstrumentPage';
 import Layout from './components/layout';
 import { AuthProvider } from './auth/AuthContext';
 import 'tailwindcss/tailwind.css';
@@ -17,6 +18,7 @@ const App = () => {
             <Route path="/" element={<h1>Home</h1>} />
             <Route path="/sign-in" element={<SignInPage />} />
             <Route path="/sign-up" element={<SignUpPage />} />
+            <Route path="/items/:symbol" element={<FinancialInstrumentPage />} />
           </Routes>
         </Layout>
       </AuthProvider>

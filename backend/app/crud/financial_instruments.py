@@ -1,6 +1,7 @@
 from happybase import Connection
 from app.models.financial_instruments import FinancialInstrument,Tick
 from datetime import datetime,timedelta
+from fastapi import HTTPException
 
 def get_symbols(db:Connection) -> list[FinancialInstrument]:
     financial_instruments = db.table("financial_instruments")
@@ -47,3 +48,12 @@ def get_popular_symbols(db:Connection) -> list[FinancialInstrument]:
             
     return symbols
 
+def get_symbol_info(db:Connection, symbol:str) -> FinancialInstrument:
+    financial_instruments = db.table("financial_instruments")
+    data = financial_instruments.row(symbol.encode("utf-8"))
+    if not data:
+        raise HTTPException(status_code=404, detail="Symbol not found")
+    name = data[b'info:name'].decode('utf-8')
+    currency = data[b'info:currency'].decode('utf-8')
+    image = data[b'info:image'].decode('utf-8')
+    return FinancialInstrument(symbol=symbol,name=name,currency=currency,image=image)

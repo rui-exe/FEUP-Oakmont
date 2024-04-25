@@ -22,7 +22,6 @@ class TradeCreate(BaseModel):
         return value
     
 class TradePublic(TradeCreate):
-    time_offered: datetime
     time_executed: datetime
 
 
