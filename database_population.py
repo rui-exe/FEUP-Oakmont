@@ -230,7 +230,7 @@ def populate_portfolio(connection):
 def delete_old_score(connection, symbol, old_score):
     table = connection.table('popularity_to_instrument')
     try:
-        table.delete(f"{sys.maxsize - old_score}_{symbol}".encode('utf-8'))
+        table.delete(f"{(2**63 - 1) - old_score}_{symbol}".encode('utf-8'))
     except:
         pass
 
@@ -261,7 +261,7 @@ def populate_popularity_to_instrument(connection):
             delete_old_score(connection, symbol, old_score)
             score += old_score      
             table.counter_set(symbol.encode('utf-8'), b'info:popularity', score)
-            score = sys.maxsize - score
+            score = (2**63-1) - score
 
             #get the symbol information
             symbol_info = table.row(symbol.encode('utf-8'))
@@ -314,7 +314,6 @@ def populate_tables():
     populate_trades(connection)
     populate_portfolio(connection)
     populate_popularity_to_instrument(connection)
-
 
 
 
