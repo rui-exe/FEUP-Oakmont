@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import FollowersCard from '../cards/FollowersCard';
 import FollowingCard from '../cards/FollowingCard';
+import FollowButton from './followButton';
+import {useAuth} from '../auth/AuthContext';
 
 export default function Profile() {
   // Get the username parameter from the URL
@@ -19,6 +21,7 @@ export default function Profile() {
   const [showFollowingCard, setShowFollowingCard] = useState(false); // New state for following card visibility
   const [followers, setFollowers] = useState([]); // New state for followers
   const [following, setFollowing] = useState([]); // New state for following status
+  const {isAuthenticated} = useAuth();
 
 
   // Fetch user data when the component mounts or when username prop changes
@@ -181,6 +184,9 @@ export default function Profile() {
                   <span onClick={toggleFollowersCard} className="cursor-pointer">{userData.nr_followers} Followers</span>
                 </div>
               </div>
+              {isAuthenticated && userData.username !== localStorage.getItem('username') && (
+                <FollowButton userId={userData.username} currentUser={localStorage.getItem('username')} token={localStorage.getItem('accessToken')} />
+              )}
             </div>
           </div>
         </div>
