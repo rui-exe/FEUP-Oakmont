@@ -16,6 +16,7 @@ dependencies {
     implementation "org.apache.hbase:hbase-common:${hbaseVersion}"
     implementation "org.apache.hbase:hbase-client:${hbaseVersion}"
     implementation "org.apache.hbase:hbase-server:${hbaseVersion}"
+    implementation group: 'org.json', name: 'json', version: '20240303'
 }
 
 jar {
