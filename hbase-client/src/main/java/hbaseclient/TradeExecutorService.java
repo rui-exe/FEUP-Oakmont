@@ -1,5 +1,6 @@
 package hbaseclient;
 import io.grpc.stub.StreamObserver;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -7,21 +8,29 @@ import org.json.JSONObject;
 import proto.hbaseclient.*;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Random;
 
 public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBase{
     private final Table usersTable;
     private final Table portfolioTable;
+    private final Table financialInstrumentsTable;
+    private final Table popularityToInstrumentTable;
     private final String userInfoCF = "info";
     private final String balanceQualifier = "balance";
     private final String positionCF = "positions";
     private final String quantityQualifier = "quantity";
     private final String lockQualifier ="lock";
+    private final String financialInstrumentInfoCF = "info";
+    private final String popularityQualifier = "popularity";
 
-
-    public TradeExecutorService(Table usersTable,Table portfolioTable) {
+    public TradeExecutorService(Table usersTable,Table portfolioTable,Table financialInstrumentsTable, Table popularityToInstrumentTable) {
         this.usersTable = usersTable;
         this.portfolioTable = portfolioTable;
+        this.popularityToInstrumentTable = popularityToInstrumentTable;
+        this.financialInstrumentsTable = financialInstrumentsTable;
     }
 
     private boolean lockPortfolioRow(Trade trade,byte[] salt) throws IOException {
@@ -69,7 +78,7 @@ public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBas
 
     private static JSONObject tradeToJson(Trade trade){
         JSONObject jsonTrade = new JSONObject();
-        jsonTrade.put("type", trade.getType().name());
+        jsonTrade.put("type", trade.getType()==TradeType.BUY?"P":"S");
         jsonTrade.put("symbol", trade.getSymbol());
         jsonTrade.put("quantity", trade.getQuantity());
         jsonTrade.put("price_per_item", trade.getPricePerItem());
@@ -116,18 +125,70 @@ public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBas
         return mutations;
     }
 
+    public static long calculateTradeScore(Trade trade){
+        long costOfTrade = (trade.getQuantity()*trade.getQuantity())/1000;
+        String myDate = "2020/01/01 00:00:00";
+        LocalDateTime localDateTime = LocalDateTime.parse(myDate,
+                DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss") );
+
+        long millis2020 = localDateTime
+                .atZone(ZoneId.systemDefault())
+                .toInstant().toEpochMilli();
+
+        long secondsSince2020 = trade.getTimeExecuted()/1000 - millis2020/1000;
+        double x = (double) (costOfTrade + secondsSince2020) /(3600*24*365);
+        return (long) (x * Math.pow(10,((long) x)));
+    }
+
+    private void updatePopularity(Trade trade) throws IOException{
+        long tradeScore = calculateTradeScore(trade);
+        long newScore = financialInstrumentsTable.incrementColumnValue(
+                Bytes.toBytes(trade.getUsername()),
+                Bytes.toBytes(financialInstrumentInfoCF),
+                Bytes.toBytes(popularityQualifier),
+                tradeScore
+        );
+        Get getFinancialInstrumentInfo = new Get(Bytes.toBytes(trade.getSymbol()));
+
+        String nameQualifier = "name";
+        String currencyQualifier = "currency";
+        String imageQualifier = "image";
+        getFinancialInstrumentInfo.addColumn(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(nameQualifier));
+        getFinancialInstrumentInfo.addColumn(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(currencyQualifier));
+        getFinancialInstrumentInfo.addColumn(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(imageQualifier));
+
+        Result financialInstrumentInfo = financialInstrumentsTable.get(getFinancialInstrumentInfo);
+        byte[] nameBytes = financialInstrumentInfo.getValue(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(nameQualifier));
+        byte[] currencyBytes = financialInstrumentInfo.getValue(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(currencyQualifier));
+        byte[] imageBytes = financialInstrumentInfo.getValue(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(imageQualifier));
+
+        long oldScore = newScore-tradeScore;
+        long reverseOldScore = Long.MAX_VALUE-oldScore;
+        long reverseNewScore = Long.MAX_VALUE-newScore;
+
+        String oldScoreKey = reverseOldScore+"_"+trade.getSymbol();
+        String newScoreKey = reverseNewScore+"_"+trade.getSymbol();
+        Delete deleteOldScore = new Delete(Bytes.toBytes(oldScoreKey));
+        Put createNewScore = new Put(Bytes.toBytes(newScoreKey));
+
+        createNewScore.addColumn(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(nameQualifier),nameBytes);
+        createNewScore.addColumn(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(currencyQualifier),currencyBytes);
+        createNewScore.addColumn(Bytes.toBytes(financialInstrumentInfoCF), Bytes.toBytes(imageQualifier),imageBytes);
+
+        popularityToInstrumentTable.delete(deleteOldScore);
+        popularityToInstrumentTable.put(createNewScore);
+    }
 
     private boolean updateUserPortfolioMoneyInvested(Trade trade) throws IOException{
         String portfolioRow = trade.getUsername() + "_" + trade.getSymbol();
-        boolean lockAcquired = false;
         int SALT_LENGTH = 10;
         byte[] salt = new byte[SALT_LENGTH];
         new Random().nextBytes(salt);
+
         try {
             Increment moneyInvestedIncrement = new Increment(Bytes.toBytes(portfolioRow));
             RowMutations mutations = new RowMutations(Bytes.toBytes(portfolioRow));
             if (this.lockPortfolioRow(trade,salt)) {
-                lockAcquired = true;
                 String moneyInvestedQualifier = "money_invested";
                 if (trade.getType() == TradeType.BUY) {
                     moneyInvestedIncrement.addColumn(
@@ -197,7 +258,7 @@ public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBas
                 this.portfolioTable.mutateRow(incrementPortfolioQuantity);
                 while (!this.updateUserPortfolioMoneyInvested(trade)) {
                 }
-                ;
+                updatePopularity(trade);
                 result = TradeResult.newBuilder()
                         .setResult(TradeResultType.TRADE_EXECUTED_SUCCESFULLY)
                         .build();
@@ -248,7 +309,8 @@ public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBas
                 RowMutations userMutations = updateUserBalanceAndTrades(trade);
                 this.usersTable.mutateRow(userMutations);
                 while(!this.updateUserPortfolioMoneyInvested(trade)){
-                };
+                }
+                updatePopularity(trade);
                 result = TradeResult.newBuilder()
                         .setResult(TradeResultType.TRADE_EXECUTED_SUCCESFULLY)
                         .build();

@@ -3,7 +3,6 @@ from app.models.trades import TradePublic,Position
 import json
 from datetime import datetime
 import struct
-import sys
 
 LONG_MAX = 2**63 - 1 
 
@@ -44,7 +43,7 @@ def get_user_portfolio(db:Connection, username:str)->list[Position]:
 
         positions.append({
             "symbol":symbol,
-            "quantity": quantity/100,
+            "quantity": quantity,
             "money_invested": money_invested/100
         })
     return positions

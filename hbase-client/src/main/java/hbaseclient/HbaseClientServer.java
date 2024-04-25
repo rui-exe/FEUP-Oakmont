@@ -38,7 +38,11 @@ public class HbaseClientServer {
         connection = ConnectionFactory.createConnection(config);
         Table usersTable = connection.getTable(TableName.valueOf("user"));
         Table portfolioTable = connection.getTable(TableName.valueOf("portfolio"));
-        TradeExecutorService tradeExecutorService = new TradeExecutorService(usersTable,portfolioTable);
+        Table popularityToInstrumentTable = connection.getTable(TableName.valueOf("popularity_to_instrument"));
+        Table financialInstrumentsTable = connection.getTable(TableName.valueOf("financial_instruments"));
+
+        TradeExecutorService tradeExecutorService = new TradeExecutorService(usersTable,portfolioTable,
+                                                        financialInstrumentsTable,popularityToInstrumentTable);
 
         server = serverBuilder.addService(tradeExecutorService).build();
     }
