@@ -22,7 +22,7 @@ def create_tables():
     # Create a table used for conversion from financial instrument popularity to instrument
     popularity_to_instrument_table_name = 'popularity_to_instrument'
     if popularity_to_instrument_table_name.encode() not in connection.tables():
-        families = {'cf1': {}}
+        families = {'info': {}}
         connection.create_table(popularity_to_instrument_table_name, families)
         print(f"Table '{popularity_to_instrument_table_name}' created.")
 
