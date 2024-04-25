@@ -287,29 +287,15 @@ def populate_tables():
     symbols = list(set(symbols))
     
     
-    #populate_financial_instruments(connection,symbols)
-    #populate_users(connection)
-    #populate_following(connection)
-    #populate_posts(connection)
-    #populate_trades(connection)
-    #populate_portfolio(connection)
-    #populate_popularity_to_instrument(connection)
+    populate_financial_instruments(connection,symbols)
+    populate_users(connection)
+    populate_following(connection)
+    populate_posts(connection)
+    populate_trades(connection)
+    populate_portfolio(connection)
+    populate_popularity_to_instrument(connection)
 
-    #raed the table portfolio and print the number of stocks and the total money invested
-    portfolio_table = connection.table('portfolio')
-    portfolio = list(portfolio_table.scan())
-    for row in portfolio:
-        print(row)
-    
 
-    #read the follower of every user
-    user_table = connection.table('user')
-    users = list(user_table.scan())
-    #get the column following from the column family info
-    for user in users:
-        following = user_table.row(user[0], columns=[b'info:following'])
-        print(following)
-        break
 
 
 if __name__ == "__main__":
