@@ -187,7 +187,7 @@ def populate_trades(connection):
         time_executed = row['Filing Date']
         time_executed = convert_dmy_to_ymd(time_executed)
         time_offered = convert_dmy_to_ymd(time_offered)
-        trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": int(float(quantity) * 100), "price_per_item": int(float(price_per_item)* 100), "time_offered": time_offered})
+        trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": int(float(quantity)), "price_per_item": int(float(price_per_item)* 100), "time_offered": time_offered})
         if username not in data_trades:
             data_trades[username] = {}
         
@@ -205,7 +205,7 @@ def populate_portfolio(connection):
             symbol = trade['symbol']
             quantity = int(trade['quantity'])
             type = trade['type']
-            price_per_item = int(trade['price_per_item'])
+            price_per_item = int(float(trade['price_per_item']))
             if symbol not in user_stocks:
                 user_stocks[symbol] = tuple([0,0])
             if type == "P":
@@ -248,8 +248,8 @@ def populate_popularity_to_instrument(connection):
             #get the trade information
             trade = json.loads(trade.decode('utf-8'))
             symbol, quantity = trade['symbol'], int(trade['quantity'])
-            price = int(trade['price_per_item'])
-            cost_of_trade = quantity * price / 100
+            price = int(float(trade['price_per_item']))
+            cost_of_trade = quantity * price / 10000
 
             #calculate the timestamp score based on the number of years since 2020 plus the cost of the trade (/ (3600*24*365) converts to years)
             timestamp = ((date_time_obj - reference_date).total_seconds() + cost_of_trade) / (3600*24*365)
