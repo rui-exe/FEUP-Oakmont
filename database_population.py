@@ -187,7 +187,7 @@ def populate_trades(connection):
         time_executed = row['Filing Date']
         time_executed = convert_dmy_to_ymd(time_executed)
         time_offered = convert_dmy_to_ymd(time_offered)
-        trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": quantity, "price_per_item": price_per_item, "time_offered": time_offered})
+        trade_json = json.dumps({ "type": type, "symbol": symbol, "quantity": int(quantity * 100), "price_per_item": int(price_per_item * 100), "time_offered": time_offered})
         if username not in data_trades:
             data_trades[username] = {}
         
@@ -219,8 +219,8 @@ def populate_portfolio(connection):
                 del user_stocks[symbol]
 
         table = connection.table('portfolio')
-        table.counter_set(f'{user}_{symbol}'.encode('utf-8'), b'positions:quantity', int(quantity*100))
-        table.counter_set(f'{user}_{symbol}'.encode('utf-8'), b'positions:money_invested', int(money_invested*100))
+        table.counter_set(f'{user}_{symbol}'.encode('utf-8'), b'positions:quantity', quantity)
+        table.counter_set(f'{user}_{symbol}'.encode('utf-8'), b'positions:money_invested', money_invested)
 
 
 def delete_old_score(connection, symbol, old_score):
