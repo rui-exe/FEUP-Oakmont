@@ -223,6 +223,12 @@ def populate_portfolio(connection):
         table.counter_set(f'{user}_{symbol}'.encode('utf-8'), b'positions:money_invested', int(money_invested*100))
 
 
+def delete_old_score(connection, symbol, old_score):
+    table = connection.table('popularity_to_instrument')
+    try:
+        table.delete(f"{sys.maxsize - old_score}_{symbol}".encode('utf-8'))
+    except:
+        pass
 
 def populate_popularity_to_instrument(connection):
 
@@ -246,8 +252,9 @@ def populate_popularity_to_instrument(connection):
             score = int(timestamp * 10 ** int(timestamp))
 
             table = connection.table('financial_instruments')
-            score += table.counter_get(symbol.encode('utf-8'), b'info:popularity')
-
+            old_score = table.counter_get(symbol.encode('utf-8'), b'info:popularity')
+            delete_old_score(connection, symbol, old_score)
+            score += old_score      
             table.counter_set(symbol.encode('utf-8'), b'info:popularity', score)
             score = sys.maxsize - score
 
@@ -255,6 +262,9 @@ def populate_popularity_to_instrument(connection):
             data[row_key.encode("utf-8")] = {
                 b'cf1:val': b'1',
             }
+            
+
+
             populate_table(connection, 'popularity_to_instrument', data)
             
 def read_symbols_from_csv(file_name,column_name):
