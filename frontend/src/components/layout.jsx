@@ -1,7 +1,30 @@
-import React from 'react';
-import { Link } from 'react-router-dom'; // Assuming you're using React Router
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom'; // Assuming you're using React Router
+import { useAuth } from '../auth/AuthContext';
 
 const Layout = ({ children }) => {
+  const { isAuthenticated, setIsAuthenticated } = useAuth();
+  const navigate = useNavigate(); // Assuming you're using React Router
+
+
+  // Function to handle logout
+  const handleLogout = () => {
+    // Perform logout actions, such as clearing local storage, etc.
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('username');
+    setIsAuthenticated(false);
+    // Redirect to the sign-in page
+    navigate('/sign-in');
+  };
+
+  useEffect(() => {
+    // Check if the user is authenticated
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   return (
     <div>
       <header className="px-4 lg:px-6 h-16 flex items-center">
@@ -13,15 +36,25 @@ const Layout = ({ children }) => {
           <Link to="/" className="text-sm font-medium hover:underline underline-offset-4" href="#">
             Home
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Popular
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Sign in
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Sign up
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link to={`/users/${localStorage.getItem('username')}`} className="text-sm font-medium hover:underline underline-offset-4" href="#">
+                Profile
+              </Link>
+              <button className="text-sm font-medium hover:underline underline-offset-4" onClick={handleLogout}>
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/sign-in" className="text-sm font-medium hover:underline underline-offset-4" href="#">
+                Sign in
+              </Link>
+              <Link to="/sign-up" className="text-sm font-medium hover:underline underline-offset-4" href="#">
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
       </header>
       <div className="bg-gray-200 min-h-screen flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -34,26 +67,5 @@ const Layout = ({ children }) => {
   );
 };
 
-function CatIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z" />
-      <path d="M8 14v.5" />
-      <path d="M16 14v.5" />
-      <path d="M11.25 16.25h1.5L12 17l-.75-.75Z" />
-    </svg>
-  )
-}
 
 export default Layout;
