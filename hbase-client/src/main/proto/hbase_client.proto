@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option java_package = "proto.hbaseclient";
+option java_multiple_files = true;
+package hbaseclient;
+
+service TradeExecutor {
+    rpc executeBuyTrade(Trade) returns (TradeResult){}
+    rpc executeSellTrade(Trade) returns (TradeResult){}
+}
+
+enum TradeType {
+    BUY = 0;
+    SELL = 1;
+}
+
+message Trade {
+    string username = 1;
+    TradeType type = 2;
+    string symbol = 3;
+    int64 quantity = 4;
+    int64 price_per_item = 5;
+    int64 time_offered = 6;
+    int64 time_executed = 7;
+}
+
+enum TradeResultType{
+    TRADE_EXECUTED_SUCCESFULLY = 0;
+    WRONG_TRADE_TYPE = 1;
+    NOT_ENOUGH = 2;
+    UNEXPECTED_SERVER_ERROR = 3;
+}
+
+message TradeResult{
+    TradeResultType result = 1;
+}
