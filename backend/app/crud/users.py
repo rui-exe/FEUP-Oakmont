@@ -72,7 +72,7 @@ def get_user_by_username(*, db: Connection, username: str) -> User | None:
   if b"info:followers" in user_in_db:
     user_data["nr_followers"] = users.counter_get(username.encode("utf-8"),b"info:followers")
   if b"info:balance" in user_in_db:
-    user_data["balance"] = users.counter_get(username.encode("utf-8"),b"info:balance")
+    user_data["balance"] = round(users.counter_get(username.encode("utf-8"),b"info:balance")/100,2)
 
   return User(**user_data)
 

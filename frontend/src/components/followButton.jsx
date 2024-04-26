@@ -54,7 +54,7 @@ const FollowButton = ({ userId, currentUser, token }) => {
   return (
     <button
       onClick={handleFollow}
-      className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${isFollowing ? 'bg-red-500' : ''}`}
+      className={`bg-blue-500 hover:bg-blue-700 text-black font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${isFollowing ? 'bg-red-500 hover:bg-red-700' : ''}`}
     >
       {isFollowing ? 'Unfollow' : 'Follow'}
     </button>

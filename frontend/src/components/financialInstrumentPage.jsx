@@ -82,7 +82,7 @@ const FinancialInstrumentPage = () => {
   ];
 
   return (
-    <div className="max-w-3xl w-full space-y-8">
+    <div className="max-w-3xl w-full space-y-8 min-w-[40%]">
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
         <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
           <div className="flex-shrink-0">
@@ -103,7 +103,7 @@ const FinancialInstrumentPage = () => {
               <h1 className="text-2xl font-bold">{instrumentSymbol}</h1>
               <span className="text-gray-500 text-sm">{name}</span>
             </div>
-            <p className="text-gray-500">300.00 {currency}</p>
+            <p className="text-gray-500">300.00 USD</p>
           </div>
         </div>
       </div>
