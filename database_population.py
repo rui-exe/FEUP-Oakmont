@@ -138,16 +138,18 @@ def populate_posts(connection):
         post = row['Tweet']
         symbol = row['Stock Name']
         date = row['Date'].split("+")[0]
+        date = MAX_LONG - convert_ymd_to_milliseconds(date)
+        date = number_to_java_long(date)
 
         if username not in data_users:
             data_users[username] = {}
         user_posts_json = json.dumps({"symbol": symbol, "post": post})
-        data_users[username][f'posts:{date}'.encode('utf-8')] = user_posts_json.encode('utf-8')
+        data_users[username][b'posts:' + date] = user_posts_json.encode('utf-8')
        
         if symbol not in data_symbols:
             data_symbols[symbol] = {}
         symbol_posts_json = json.dumps({"username": username, "post": post})
-        data_symbols[symbol][f'posts:{date}'.encode('utf-8')] = symbol_posts_json.encode('utf-8')
+        data_symbols[symbol][b'posts:' + date] = symbol_posts_json.encode('utf-8')
 
     populate_table(connection, 'user', data_users)
     populate_table(connection, 'financial_instruments', data_symbols)
@@ -303,6 +305,9 @@ def read_symbols_from_csv(file_name,column_name):
 
 def convert_dmy_to_milliseconds(date):
     return int(datetime.datetime.strptime(date, '%d/%m/%Y %H:%M').timestamp() * 1000)
+
+def convert_ymd_to_milliseconds(date):
+    return int(datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S').timestamp() * 1000)
 
 def populate_tables():
     wait_for_hbase()
