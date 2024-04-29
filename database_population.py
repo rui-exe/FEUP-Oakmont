@@ -336,10 +336,7 @@ def populate_tables():
     populate_trades(connection)
     populate_portfolio(connection)
     populate_popularity_to_instrument(connection)
-    #print popularity of each symbol
-    table = connection.table('popularity_to_instrument')
-    for key, data in table.scan():
-        print(key, data)
+
 
 
 

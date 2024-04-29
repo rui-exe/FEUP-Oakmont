@@ -53,6 +53,8 @@ export default function Profile() {
         setError(error.message); // Set error message
         setLoading(false); // Set loading state to false if there's an error
       }
+      
+      window.scrollTo(0, 0);
     };
     // Function to fetch trades
     const fetchTrades = async () => {
