@@ -4,6 +4,7 @@ import FollowersCard from '../cards/FollowersCard';
 import FollowingCard from '../cards/FollowingCard';
 import FollowButton from './followButton';
 import {useAuth} from '../auth/AuthContext';
+import Balance from './balance';
 
 export default function Profile() {
   // Get the username parameter from the URL
@@ -81,6 +82,9 @@ export default function Profile() {
           throw new Error('Failed to fetch posts');
         }
         const postsData = await response.json();
+        if (postsData.length === 0) {
+          setBegin(prevBegin => Math.max(0, prevBegin - 10)); // Decrement begin index by 10 if no posts are found
+        }
         setPosts(postsData);
       } catch (error) {
         console.error('Error fetching posts:', error);
@@ -91,11 +95,11 @@ export default function Profile() {
 
   // Handle pagination
   const handleNextPage = () => {
-    setBegin(prevBegin => prevBegin + 10); // Increment begin index by 100 for next page
+    setBegin(prevBegin => prevBegin + 10); // Increment begin index by 10 for next page
   };
 
   const handlePreviousPage = () => {
-    setBegin(prevBegin => Math.max(0, prevBegin - 10)); // Decrement begin index by 100 for previous page
+    setBegin(prevBegin => Math.max(0, prevBegin - 10)); // Decrement begin index by 10 for previous page
   };
 
   // Fetch followers when the followers card is shown
@@ -176,7 +180,7 @@ export default function Profile() {
 
   return (
     // Render user data, posts, trades, and followers
-    <div>
+    <div className="min-w-[40%]">
       <div className="max-w-3xl w-full space-y-8">
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -202,6 +206,14 @@ export default function Profile() {
             </div>
           </div>
         </div>
+
+
+        {/* Render user balance */}
+        {isAuthenticated && userData.username === localStorage.getItem('username') && (
+          <Balance balance={userData.balance} />
+        )}
+
+
         {/* Render trades */}
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           <div className="p-6 sm:p-8">
@@ -220,8 +232,11 @@ export default function Profile() {
                 {showMoreTrades ? 'Show less trades' : 'Show more trades'}
               </button>
             )}
+            {trades.length === 0 && <p className="text-gray-500 mt-4">No trades found</p>}
           </div>
         </div>
+
+
         {/* Render posts */}
           <div className="bg-white shadow-sm rounded-lg overflow-hidden">
             <div className="p-6 sm:p-8">
@@ -236,11 +251,15 @@ export default function Profile() {
                     <p className="text-gray-500 mt-2">{post.text}</p>
                   </div>
                 ))}
+                {posts.length === 0 && <p className="text-gray-500 mt-4">No posts found</p>}
               </div>
+
+
               {/* Pagination controls */}
+              {posts.length > 0 && (
                 <div className="mt-4 flex justify-center">
                   <button
-                    className="mr-2 px-4 py-2 bg-gray-200 rounded-md"
+                    className="mr-2 px-4 py-2 bg-blue-500 rounded-md"
                     onClick={() => {
                       handlePreviousPage();
                       scrollToTarget();
@@ -250,7 +269,7 @@ export default function Profile() {
                     Previous
                   </button>
                   <button
-                    className="px-4 py-2 bg-gray-200 rounded-md"
+                    className="px-4 py-2 bg-blue-500 rounded-md"
                     onClick={() => {
                       handleNextPage();
                       scrollToTarget();
@@ -259,6 +278,9 @@ export default function Profile() {
                     Next
                   </button>
                 </div>
+              )}
+
+              
             </div>
           </div>
       </div>
