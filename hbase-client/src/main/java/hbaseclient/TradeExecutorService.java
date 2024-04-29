@@ -143,7 +143,7 @@ public class TradeExecutorService extends TradeExecutorGrpc.TradeExecutorImplBas
     private void updatePopularity(Trade trade) throws IOException{
         long tradeScore = calculateTradeScore(trade);
         long newReverseScore = financialInstrumentsTable.incrementColumnValue(
-                Bytes.toBytes(trade.getUsername()),
+                Bytes.toBytes(trade.getSymbol()),
                 Bytes.toBytes(financialInstrumentInfoCF),
                 Bytes.toBytes(popularityQualifier),
                 -tradeScore

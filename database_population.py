@@ -243,14 +243,16 @@ def populate_portfolio(connection):
 
 def delete_old_score(connection, symbol, old_score):
     table = connection.table('popularity_to_instrument')
-    try:
-        table.delete(f"{old_score}_{symbol}".encode('utf-8'))
-    except:
-        pass
+    table.delete(f"{old_score}_{symbol}".encode('utf-8'))
 
 
 
 def populate_popularity_to_instrument(connection):
+    #populate with INT_MAX popularity in every symbol
+    table = connection.table('financial_instruments')
+    symbols = set([key[0].decode('utf-8') for key in table.scan(columns=[])])
+    for symbol in symbols:
+        table.counter_set(symbol.encode('utf-8'), b'info:popularity', MAX_LONG)
 
     users_table = connection.table('user').scan(columns=[b'trades'])
     users = list(users_table)
@@ -264,7 +266,6 @@ def populate_popularity_to_instrument(connection):
 
             #get the trade information
             trade = json.loads(trade.decode('utf-8'))
-            print(trade)
             symbol, quantity = trade['symbol'], int(trade['quantity'])
             price = int(float(trade['price_per_item']))
             cost_of_trade = quantity * price / 100
@@ -284,7 +285,7 @@ def populate_popularity_to_instrument(connection):
             #get the symbol information
             symbol_info = table.row(symbol.encode('utf-8'))
             
-            row_key = f"{score}_{symbol}"
+            row_key = f"{new_reverse_score}_{symbol}"
             data[row_key.encode("utf-8")] = {
                 b'info:name': symbol_info[b'info:name'],
                 b'info:currency': symbol_info[b'info:currency'],
@@ -330,6 +331,10 @@ def populate_tables():
     populate_trades(connection)
     populate_portfolio(connection)
     populate_popularity_to_instrument(connection)
+    #print popularity of each symbol
+    table = connection.table('popularity_to_instrument')
+    for key, data in table.scan():
+        print(key, data)
 
 
 
