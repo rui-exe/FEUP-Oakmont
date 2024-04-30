@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams , Link } from 'react-router-dom';
 import StockChart from './stockChart';
+import Trade from './trade';
+import { useAuth } from '../auth/AuthContext';
 
 const FinancialInstrumentPage = () => {
   const [financialInstrument, setFinancialInstrument] = useState(null);
@@ -8,6 +10,36 @@ const FinancialInstrumentPage = () => {
   const [posts, setPosts] = useState([]);
   const [begin, setBegin] = useState(0); // State to track the beginning index of posts
   const scrollToRef = useRef(null);
+  const { isAuthenticated } = useAuth();
+  const [balance, setBalance] = useState(0);
+
+
+  useEffect(() => {
+    // Fetch user balance
+    const username = localStorage.getItem('username');
+        const fetchBalance = async () => {
+          try {
+            const response = await fetch(`http://localhost:8081/users/${username}`);
+              if (!response.ok) {
+                if (response.status === 404) {
+                  throw new Error('User not found');
+                } else {
+                  throw new Error('Failed to fetch user data');
+                }
+              }
+              const userData = await response.json();
+              setBalance(userData.balance);
+          }
+          catch (error) {
+            console.error('Error fetching user balance:', error);
+          }
+        }
+        fetchBalance();
+    }
+  , []);
+
+
+    
 
   const scrollToTarget = () => {
     // Scroll to the target element
@@ -104,10 +136,12 @@ const FinancialInstrumentPage = () => {
               <h1 className="text-2xl font-bold">{instrumentSymbol}</h1>
               <span className="text-gray-500 text-sm">{name}</span>
             </div>
-            <p className="text-gray-500">300.00 USD</p>
+            <p className="text-black-500">300.00 USD</p>
           </div>
         </div>
       </div>
+      {/* Render trade component */}
+      {isAuthenticated && <Trade symbol={symbol} price={300} balance={balance} />}
       <div className="max-w-3xl w-full space-y-8">
         <StockChart data={data} />
       </div>
