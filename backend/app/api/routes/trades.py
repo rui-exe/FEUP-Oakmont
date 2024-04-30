@@ -37,8 +37,10 @@ async def execute_trade(trade: TradeCreate, trade_executor: TradeExecutor,curren
         return {"message": "Trade executed successfully"}
     elif result_type == TradeResultType.WRONG_TRADE_TYPE:
         raise HTTPException(status_code=400, detail="Wrong trade type")
-    elif result_type == TradeResultType.NOT_ENOUGH:
-        raise HTTPException(status_code=400, detail="Not enough")
+    elif result_type == TradeResultType.NOT_ENOUGH and trade.type==ModelTradeType.BUY:
+        raise HTTPException(status_code=400, detail="Not enough money to buy")
+    elif result_type == TradeResultType.NOT_ENOUGH and trade.type==ModelTradeType.SELL:
+        raise HTTPException(status_code=400, detail="Not enough items to sell")
     elif result_type == TradeResultType.UNEXPECTED_SERVER_ERROR:
         raise HTTPException(status_code=500, detail="Unexpected server error")
     else:
