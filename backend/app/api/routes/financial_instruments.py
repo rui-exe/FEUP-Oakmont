@@ -53,3 +53,10 @@ def create_new_post(db: HBase, current_user: CurrentUser, symbol: str = Path(...
         "text": text
     })
     return post
+
+@router.get("/{symbol}/price")
+async def get_most_recent_price(db:HBase, symbol:str = Path(..., description="Symbol of the financial instrument")) -> Tick:
+  """
+  Get the most recent price of a financial instrument
+  """
+  return financial_instruments_crud.get_most_recent_price(db, symbol)

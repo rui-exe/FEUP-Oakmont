@@ -12,12 +12,30 @@ export default function HomePage() {
           throw new Error('Failed to fetch stocks');
         }
         const data = await response.json();
-        setStocks(data);
+        
+        // Fetch prices for all stocks concurrently
+        const pricePromises = data.map(async (stock) => {
+          const priceResponse = await fetch(`http://localhost:8081/financial_instruments/${stock.symbol}/price`);
+          if (!priceResponse.ok) {
+            throw new Error('Failed to fetch price');
+          }
+          const priceData = await priceResponse.json();
+          return {
+            ...stock,
+            price: priceData.value.toFixed(2),
+          };
+        });
+        
+        // Wait for all price fetch requests to complete
+        const stocksWithPrices = await Promise.all(pricePromises);
+        
+        // Update state with stocks containing prices
+        setStocks(stocksWithPrices);
       } catch (error) {
         console.error('Error fetching stocks:', error);
       }
     }
-
+  
     fetchStocks();
   }, []);
 
@@ -56,8 +74,12 @@ export default function HomePage() {
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-lg font-medium">{stock.name}</td>
-                {/* You might need to add a price field to your backend response */}
-                <td className="px-4 py-3 text-right text-lg font-bold">Price Here</td>
+                {/* Display the price for each stock */}
+                {stock.price ? (
+                  <td className="px-4 py-3 text-right text-lg font-bold">${stock.price}</td>
+                ) : (
+                  <td className="px-4 py-3 text-right text-lg font-bold">Price Not Available</td>
+                )}
               </tr>
             ))}
           </tbody>

@@ -57,3 +57,14 @@ def get_symbol_info(db:Connection, symbol:str) -> FinancialInstrument:
     currency = data[b'info:currency'].decode('utf-8')
     image = data[b'info:image'].decode('utf-8')
     return FinancialInstrument(symbol=symbol,name=name,currency=currency,image=image)
+
+def get_most_recent_price(db:Connection, symbol:str) -> Tick:
+    instrument_prices = db.table("instrument_prices")
+    row_key_prefix = f"{symbol}_".encode("utf-8")
+    
+    data = list(instrument_prices.scan(row_prefix=row_key_prefix, limit=1, reverse=True))
+    if not data:
+        raise HTTPException(status_code=404, detail="Symbol not found")
+    timestamp_str = data[0][0].decode("utf-8").split("_")[1]
+    timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+    return Tick(timestamp=timestamp, value=float(data[0][1][b"series:val"].decode("utf-8")))  

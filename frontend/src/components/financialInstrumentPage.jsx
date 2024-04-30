@@ -4,11 +4,12 @@ import StockChart from './stockChart';
 
 const FinancialInstrumentPage = () => {
   const [financialInstrument, setFinancialInstrument] = useState(null);
+  const [mostRecentPrice, setMostRecentPrice] = useState(null); // State to store most recent price
   const { symbol } = useParams();
   const [posts, setPosts] = useState([]);
   const [begin, setBegin] = useState(0); // State to track the beginning index of posts
   const scrollToRef = useRef(null);
-
+  
   const scrollToTarget = () => {
     // Scroll to the target element
     scrollToRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -19,6 +20,15 @@ const FinancialInstrumentPage = () => {
       .then(response => response.json())
       .then(data => setFinancialInstrument(data))
       .catch(error => console.error('Error fetching financial instrument data:', error));
+
+    // Fetch most recent price for the provided symbol
+    // Fetch most recent price for the provided symbol
+    fetch(`http://localhost:8081/financial_instruments/${symbol}/price`)
+      .then(response => response.json())
+      .then(data => setMostRecentPrice(data.value.toFixed(2))) // Access 'value' directly and format it
+      .catch(error => console.error('Error fetching most recent price:', error));
+
+    
     // Fetch posts for the provided symbol and begin index
     const fetchPosts = async () => {
       try {
@@ -33,7 +43,6 @@ const FinancialInstrumentPage = () => {
       }
     };
     fetchPosts();
-    //window.scrollTo(0, 0);
   }, [symbol, begin]);
 
 
@@ -47,7 +56,7 @@ const FinancialInstrumentPage = () => {
   };
 
   // Render loading state if financial instrument data is not yet fetched
-  if (!financialInstrument) {
+  if (!financialInstrument || mostRecentPrice === null) {
     return <div>Loading...</div>;
   }
 
@@ -104,7 +113,9 @@ const FinancialInstrumentPage = () => {
               <h1 className="text-2xl font-bold">{instrumentSymbol}</h1>
               <span className="text-gray-500 text-sm">{name}</span>
             </div>
-            <p className="text-gray-500">300.00 USD</p>
+            <p className="text-gray-500">
+              {mostRecentPrice !== null ? `${mostRecentPrice} ${currency}` : 'Loading...'}
+            </p>
           </div>
         </div>
       </div>
