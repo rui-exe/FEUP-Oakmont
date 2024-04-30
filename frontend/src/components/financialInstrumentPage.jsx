@@ -152,7 +152,7 @@ const FinancialInstrumentPage = () => {
         </div>
       </div>
       {/* Render trade component */}
-      {isAuthenticated && <Trade symbol={symbol} price={300} balance={balance} />}
+      {isAuthenticated && <Trade symbol={symbol} price={mostRecentPrice} balance={balance} />}
       <div className="max-w-3xl w-full space-y-8">
         <StockChart data={data} />
       </div>

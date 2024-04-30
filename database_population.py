@@ -47,7 +47,7 @@ def get_symbol_info(ticker):
     return ticker.info['currency'], ticker.info['longName'], ticker.info['website']
 
 def get_historical_data_daily(ticker):
-    symbol_historical = ticker.history(period='max', interval='1d')
+    symbol_historical = ticker.history(period='max', interval='1d', start='1970-01-01')
     return symbol_historical
 
 def get_historical_data_hourly(ticker):
@@ -81,8 +81,10 @@ def convert_yfinance_price_history_to_hbase_dict(symbol,yahoo_df):
         ticker_timestamp ,(high, low, close, volume, dividends, stock_splits, name) = row
         ticker_datetime = ticker_timestamp.to_pydatetime()
         ticker_datetime_str = ticker_datetime.strftime('%Y-%m-%d %H:%M:%S')
-        row_key = f"{symbol}_{ticker_datetime_str}"
-        data[row_key.encode("utf-8")] = {
+        ticker_datetime_ms = convert_ymd_to_milliseconds(ticker_datetime_str)
+        ticker_datetime_ms = number_to_java_long(ticker_datetime_ms)
+        row_key = f"{symbol}_".encode('utf-8') + ticker_datetime_ms
+        data[row_key] = {
             b'series:val': str(close).encode('utf-8'),
         }
     return data
