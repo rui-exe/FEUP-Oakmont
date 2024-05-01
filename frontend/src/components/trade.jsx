@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 export default function Trade({ price, balance, symbol }) {
     // State variables for pop-up form
     const [showTradeForm, setShowTradeForm] = useState(false);
-    const [amount, setAmount] = useState(0);
+    const [amount, setAmount] = useState(1);
     const [tradeType, setTradeType] = useState('buy'); // 'buy' or 'sell'
-    const [cost, setCost] = useState(0);
-    const [gain, setGain] = useState(0);
+    const [cost, setCost] = useState(amount ? price * amount : 0);
+    const [gain, setGain] = useState(amount ? price * amount : 0);
     const [tradeMessage, setTradeMessage] = useState('');
     const navigate = useNavigate();
 
@@ -32,9 +32,9 @@ export default function Trade({ price, balance, symbol }) {
 
     const handleTradeTypeChange = (type) => {
         setTradeType(type);
-        setAmount(0);
-        setCost(0);
-        setGain(0);
+        setAmount(1);
+        setCost(price);
+        setGain(price);
     };
 
     const executeTrade = async () => {
@@ -103,17 +103,17 @@ export default function Trade({ price, balance, symbol }) {
                         <h2 className="text-lg font-bold mb-4">{tradeType === 'buy' ? 'Buy' : 'Sell'} Amount</h2>
                         <input
                             type="number"
-                            step="1"
-                            min="0"
+                            step={1}
+                            min={1}
                             className="border border-gray-300 rounded-md w-full py-2 px-3 mb-4"
-                            placeholder="0"
+                            placeholder="Amount"
                             value={amount}
                             onChange={handleAmountChange}
                         />
                         {tradeType === 'buy' ? (
-                            <p className="text-black mb-4">Cost: {cost.toFixed(2)} USD</p>
+                            <p className="text-black mb-4">Cost: {parseFloat(cost).toFixed(2)} USD</p>
                         ) : (
-                            <p className="text-black mb-4">Gain: {gain.toFixed(2)} USD</p>
+                            <p className="text-black mb-4">Gain: {parseFloat(gain).toFixed(2)} USD</p>
                         )}
                         <div className="flex justify-end">
                             <button className="mr-2 px-4 py-2 bg-gray-300 text-gray-800 rounded-md" onClick={toggleTradeForm}>

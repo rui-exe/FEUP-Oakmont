@@ -225,7 +225,7 @@ export default function Profile() {
                 <div key={index} className="bg-gray-100 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold"> <Link to={`/items/${trade.symbol}`}>{trade.symbol}</Link></h3>
                   <p className="text-black-500 mt-2">{new Date(trade.time_executed).toLocaleString()}</p>
-                  <p className="text-gray-500 mt-2">{trade.type.toUpperCase()}: {trade.quantity} shares at {trade.price_per_item}$</p>
+                  <p className="text-gray-500 mt-2">{trade.type.toUpperCase()}: {trade.quantity} shares at {trade.price_per_item}$ each</p>
                 </div>
               ))}
             </div>
