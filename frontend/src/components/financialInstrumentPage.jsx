@@ -156,8 +156,13 @@ const FinancialInstrumentPage = () => {
       {/* Render trade component */}
       {isAuthenticated && <Trade symbol={symbol} price={mostRecentPrice} balance={balance} />}
       {/* Render stock chart */}
-      <div className="max-w-3xl w-full space-y-8">
-        <StockChart data={data} />
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="p-6 sm:p-8">
+          <h2 className="text-xl font-bold mb-4">Stock Chart</h2>
+        </div>
+        <div className="max-w-3xl w-full space-y-8">
+          <StockChart data={data} />
+        </div>
       </div>
 
       {/* Render create post form */}
