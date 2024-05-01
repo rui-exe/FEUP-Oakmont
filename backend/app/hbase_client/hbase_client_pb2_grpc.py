@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import app.hbase_client.hbase_client_pb2 as hbase__client__pb2
+import hbase_client_pb2 as hbase__client__pb2
 
 
 class TradeExecutorStub(object):
@@ -95,5 +95,66 @@ class TradeExecutor(object):
         return grpc.experimental.unary_unary(request, target, '/hbaseclient.TradeExecutor/executeSellTrade',
             hbase__client__pb2.Trade.SerializeToString,
             hbase__client__pb2.TradeResult.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+
+class InstrumentAnalyticsStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.getInstrumentPrices = channel.unary_unary(
+                '/hbaseclient.InstrumentAnalytics/getInstrumentPrices',
+                request_serializer=hbase__client__pb2.InstrumentPricesRequest.SerializeToString,
+                response_deserializer=hbase__client__pb2.InstrumentPricesResponse.FromString,
+                )
+
+
+class InstrumentAnalyticsServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def getInstrumentPrices(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_InstrumentAnalyticsServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'getInstrumentPrices': grpc.unary_unary_rpc_method_handler(
+                    servicer.getInstrumentPrices,
+                    request_deserializer=hbase__client__pb2.InstrumentPricesRequest.FromString,
+                    response_serializer=hbase__client__pb2.InstrumentPricesResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'hbaseclient.InstrumentAnalytics', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+ # This class is part of an EXPERIMENTAL API.
+class InstrumentAnalytics(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def getInstrumentPrices(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/hbaseclient.InstrumentAnalytics/getInstrumentPrices',
+            hbase__client__pb2.InstrumentPricesRequest.SerializeToString,
+            hbase__client__pb2.InstrumentPricesResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

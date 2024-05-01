@@ -55,6 +55,6 @@ message InstrumentPricesResponse {
     repeated Tick ticks = 1;
 }
 
-service InstrumentAnalyticsService {
+service InstrumentAnalytics{
     rpc getInstrumentPrices(InstrumentPricesRequest) returns (InstrumentPricesResponse);
 }

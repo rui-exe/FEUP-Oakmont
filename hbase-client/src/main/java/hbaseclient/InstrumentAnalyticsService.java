@@ -13,7 +13,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Job;
-import proto.hbaseclient.InstrumentAnalyticsServiceGrpc;
+import proto.hbaseclient.InstrumentAnalyticsGrpc;
 import proto.hbaseclient.InstrumentPricesRequest;
 import proto.hbaseclient.InstrumentPricesResponse;
 import proto.hbaseclient.Tick;
@@ -21,7 +21,7 @@ import proto.hbaseclient.Tick;
 import java.io.IOException;
 import java.util.UUID;
 
-public class InstrumentAnalyticsService extends InstrumentAnalyticsServiceGrpc.InstrumentAnalyticsServiceImplBase {
+public class InstrumentAnalyticsService extends InstrumentAnalyticsGrpc.InstrumentAnalyticsImplBase {
 
     private final Configuration conf;
     private final Connection connection;
