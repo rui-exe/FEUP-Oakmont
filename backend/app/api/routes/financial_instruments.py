@@ -60,3 +60,10 @@ async def get_most_recent_price(db:HBase, symbol:str = Path(..., description="Sy
   Get the most recent price of a financial instrument
   """
   return financial_instruments_crud.get_most_recent_price(db, symbol)
+
+@router.get("/search/{prefix}")
+async def get_symbols_from_prefix(db:HBase, prefix:str = Path(..., description="Prefix of the symbol")) -> list[FinancialInstrument]:
+  """
+  Get the symbols from a prefix
+  """
+  return financial_instruments_crud.get_symbol_by_prefix(db, prefix)

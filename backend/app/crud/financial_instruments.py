@@ -83,3 +83,14 @@ def convert_ymd_to_milliseconds(date):
 
 def reverse_convert_ymd_to_milliseconds(date):
     return datetime.fromtimestamp(date/1000).strftime('%Y-%m-%d %H:%M:%S')
+
+def get_symbol_by_prefix(db:Connection, symbol_sub_string:str) -> list[FinancialInstrument]:
+    financial_instruments = db.table("financial_instruments")
+    symbols = []
+    for key, data in financial_instruments.scan(row_prefix=symbol_sub_string.upper().encode("utf-8"), limit=5):
+        symbol = key.decode('utf-8')
+        name = data[b'info:name'].decode('utf-8')
+        currency = data[b'info:currency'].decode('utf-8')
+        image = data[b'info:image'].decode('utf-8')
+        symbols.append({"symbol":symbol,"name": name, "currency": currency, "image": image})
+    return symbols
