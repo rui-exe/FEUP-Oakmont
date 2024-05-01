@@ -169,8 +169,8 @@ const FinancialInstrumentPage = () => {
               <h1 className="text-2xl font-bold">{instrumentSymbol}</h1>
               <span className="text-gray-500 text-sm">{name}</span>
             </div>
-            <p className="text-gray-500">
-              {mostRecentPrice !== null ? `${mostRecentPrice} ${currency}` : 'Loading...'}
+            <p className="font-bold text-lg">
+               {mostRecentPrice !== null ? `$${mostRecentPrice}` : 'Loading...'}
             </p>
           </div>
         </div>
@@ -178,8 +178,13 @@ const FinancialInstrumentPage = () => {
       {/* Render trade component */}
       {isAuthenticated && <Trade symbol={symbol} price={mostRecentPrice} balance={balance} />}
       {/* Render stock chart */}
-      <div className="max-w-3xl w-full space-y-8">
-        <StockChart data={data} />
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="p-6 sm:p-8">
+          <h2 className="text-xl font-bold mb-4">Stock Chart</h2>
+        </div>
+        <div className="max-w-3xl w-full space-y-8">
+          <StockChart data={data} />
+        </div>
       </div>
 
       {/* Render create post form */}
@@ -232,8 +237,8 @@ const FinancialInstrumentPage = () => {
                 <h3 className="text-lg font-semibold">
                   <Link to={`/users/${post.username}`}>{post.username}</Link>
                 </h3>
-                <p className="text-black-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
-                <p className="text-gray-500 mt-2">{post.text}</p>
+                <p className="text-gray-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
+                <p className="text-black-500 mt-2">{post.text}</p>
               </div>
             ))}
             {posts.length === 0 && <p className="text-gray-500 mt-4">No posts found</p>}
