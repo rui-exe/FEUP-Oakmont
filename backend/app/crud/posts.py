@@ -1,7 +1,27 @@
 from app.models.posts import Post
 from happybase import Connection
-from datetime import datetime
+import time
+import datetime
 import json
+import struct
+
+MAX_LONG = 2**63 - 1
+
+def number_to_java_long(number):
+    java_long = struct.pack('>q', number)
+    return java_long 
+def java_long_to_number(java_long):
+    # Unpack the Java long to a signed 64-bit integer
+    number = struct.unpack('>q', java_long)[0]
+    return number
+
+def increment_byte_array(byte_array:bytes):
+    #convert the byte array to a binary number
+    number = int.from_bytes(byte_array, "big")
+    #increment the number
+    number += 1
+    #convert the number back to a byte array
+    return number.to_bytes(len(byte_array), "big")
 
 def get_user_posts(db:Connection, username:str,begin:int)->list[Post]:
     """
@@ -9,16 +29,18 @@ def get_user_posts(db:Connection, username:str,begin:int)->list[Post]:
     """
     user_table = db.table("user")
     posts = []
-    for key,data in user_table.row(username.encode("utf-8"),columns=[b"posts"]).items():
-        time_stamp = key.decode("utf-8")
-        #data is a json
-        data = json.loads(data)
-        posts.append({
-            "username":username,
-            "symbol": data["symbol"],
-            "timestamp": time_stamp[len("posts:"):],
-            "text": data["post"]
-        })
+    for _,row in user_table.scan(row_start=username.encode("utf-8"), row_stop=increment_byte_array(username.encode("utf-8")), columns=[b"posts"], sorted_columns=True):
+        for column,data in row.items():
+            data = json.loads(data)
+            time_reverse_ms = java_long_to_number(column[len("posts:"):])
+            time_ms = MAX_LONG-time_reverse_ms
+            posts.append({
+                "username":username,
+                "symbol": data["symbol"],
+                "timestamp": datetime.datetime.fromtimestamp(int(time_ms/1000)),
+                "text": data["post"]
+            })
+        break
     return posts[begin:begin+10]
 
 def get_symbol_posts(db:Connection, symbol:str, begin:int)->list[Post]:
@@ -27,16 +49,18 @@ def get_symbol_posts(db:Connection, symbol:str, begin:int)->list[Post]:
     """
     symbol_table = db.table("financial_instruments")
     posts = []
-    for key,data in symbol_table.row(symbol.encode("utf-8"),columns=[b"posts"]).items():
-        time_stamp = key.decode("utf-8")
-        #data is a json
-        data = json.loads(data)
-        posts.append({
-            "username": data["username"],
-            "symbol": symbol,
-            "timestamp": time_stamp[len("posts:"):],
-            "text": data["post"]
-        })
+    for _,row in symbol_table.scan(row_start=symbol.encode("utf-8"), row_stop=increment_byte_array(symbol.encode("utf-8")), columns=[b"posts"], sorted_columns=True):
+        for column,data in row.items():
+            data = json.loads(data)
+            time_reverse_ms = java_long_to_number(column[len("posts:"):])
+            time_ms = MAX_LONG-time_reverse_ms
+            posts.append({
+                "username":data["username"],
+                "symbol": symbol,
+                "timestamp": datetime.datetime.fromtimestamp(int(time_ms/1000)),
+                "text": data["post"]
+            })
+        break
     return posts[begin:begin+10]
 
 def create_new_post(db: Connection, post: dict) -> Post:
@@ -45,7 +69,9 @@ def create_new_post(db: Connection, post: dict) -> Post:
     """
     user_table = db.table("user")
     financial_table = db.table("financial_instruments")
-    timestamp = datetime.now().isoformat()
+    timestamp = int(round(time.time() * 1000))
+    timestamp = MAX_LONG - timestamp
+    timestamp = number_to_java_long(timestamp)
     
     post_data = json.dumps({
         "username": post["username"],
@@ -53,8 +79,8 @@ def create_new_post(db: Connection, post: dict) -> Post:
         "post": post["text"]
     }).encode("utf-8")
 
-    user_post_column = f"posts:{timestamp}".encode("utf-8")
-    financial_post_column = f"posts:{timestamp}".encode("utf-8")
+    user_post_column = b"posts:" + timestamp
+    financial_post_column = b"posts:" + timestamp
 
     user_batch_data = {
         post["username"].encode("utf-8"): {user_post_column: post_data}

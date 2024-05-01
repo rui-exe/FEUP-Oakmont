@@ -7,6 +7,7 @@ import FinancialInstrumentPage from './components/financialInstrumentPage';
 import Layout from './components/layout';
 import { AuthProvider } from './auth/AuthContext';
 import 'tailwindcss/tailwind.css';
+import HomePage from './components/homePage';
 
 const App = () => {
   return (
@@ -15,7 +16,7 @@ const App = () => {
         <Layout>
           <Routes>
             <Route path="/users/:username" element={<Profile />} />
-            <Route path="/" element={<h1>Home</h1>} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/sign-in" element={<SignInPage />} />
             <Route path="/sign-up" element={<SignUpPage />} />
             <Route path="/items/:symbol" element={<FinancialInstrumentPage />} />

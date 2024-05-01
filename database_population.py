@@ -47,7 +47,7 @@ def get_symbol_info(ticker):
     return ticker.info['currency'], ticker.info['longName'], ticker.info['website']
 
 def get_historical_data_daily(ticker):
-    symbol_historical = ticker.history(period='max', interval='1d')
+    symbol_historical = ticker.history(period='max', interval='1d', start='1970-01-01')
     return symbol_historical
 
 def get_historical_data_hourly(ticker):
@@ -81,8 +81,10 @@ def convert_yfinance_price_history_to_hbase_dict(symbol,yahoo_df):
         ticker_timestamp ,(high, low, close, volume, dividends, stock_splits, name) = row
         ticker_datetime = ticker_timestamp.to_pydatetime()
         ticker_datetime_str = ticker_datetime.strftime('%Y-%m-%d %H:%M:%S')
-        row_key = f"{symbol}_{ticker_datetime_str}"
-        data[row_key.encode("utf-8")] = {
+        ticker_datetime_ms = convert_ymd_to_milliseconds(ticker_datetime_str)
+        ticker_datetime_ms = number_to_java_long(ticker_datetime_ms)
+        row_key = f"{symbol}_".encode('utf-8') + ticker_datetime_ms
+        data[row_key] = {
             b'series:val': str(close).encode('utf-8'),
         }
     return data
@@ -138,16 +140,18 @@ def populate_posts(connection):
         post = row['Tweet']
         symbol = row['Stock Name']
         date = row['Date'].split("+")[0]
+        date = MAX_LONG - convert_ymd_to_milliseconds(date)
+        date = number_to_java_long(date)
 
         if username not in data_users:
             data_users[username] = {}
         user_posts_json = json.dumps({"symbol": symbol, "post": post})
-        data_users[username][f'posts:{date}'.encode('utf-8')] = user_posts_json.encode('utf-8')
+        data_users[username][b'posts:' + date] = user_posts_json.encode('utf-8')
        
         if symbol not in data_symbols:
             data_symbols[symbol] = {}
         symbol_posts_json = json.dumps({"username": username, "post": post})
-        data_symbols[symbol][f'posts:{date}'.encode('utf-8')] = symbol_posts_json.encode('utf-8')
+        data_symbols[symbol][b'posts:' + date] = symbol_posts_json.encode('utf-8')
 
     populate_table(connection, 'user', data_users)
     populate_table(connection, 'financial_instruments', data_symbols)
@@ -243,14 +247,16 @@ def populate_portfolio(connection):
 
 def delete_old_score(connection, symbol, old_score):
     table = connection.table('popularity_to_instrument')
-    try:
-        table.delete(f"{old_score}_{symbol}".encode('utf-8'))
-    except:
-        pass
+    table.delete(f"{old_score}_{symbol}".encode('utf-8'))
 
 
 
 def populate_popularity_to_instrument(connection):
+    #populate with INT_MAX popularity in every symbol
+    table = connection.table('financial_instruments')
+    symbols = set([key[0].decode('utf-8') for key in table.scan(columns=[])])
+    for symbol in symbols:
+        table.counter_set(symbol.encode('utf-8'), b'info:popularity', MAX_LONG)
 
     users_table = connection.table('user').scan(columns=[b'trades'])
     users = list(users_table)
@@ -264,7 +270,6 @@ def populate_popularity_to_instrument(connection):
 
             #get the trade information
             trade = json.loads(trade.decode('utf-8'))
-            print(trade)
             symbol, quantity = trade['symbol'], int(trade['quantity'])
             price = int(float(trade['price_per_item']))
             cost_of_trade = quantity * price / 100
@@ -284,7 +289,7 @@ def populate_popularity_to_instrument(connection):
             #get the symbol information
             symbol_info = table.row(symbol.encode('utf-8'))
             
-            row_key = f"{score}_{symbol}"
+            row_key = f"{new_reverse_score}_{symbol}"
             data[row_key.encode("utf-8")] = {
                 b'info:name': symbol_info[b'info:name'],
                 b'info:currency': symbol_info[b'info:currency'],
@@ -303,6 +308,9 @@ def read_symbols_from_csv(file_name,column_name):
 
 def convert_dmy_to_milliseconds(date):
     return int(datetime.datetime.strptime(date, '%d/%m/%Y %H:%M').timestamp() * 1000)
+
+def convert_ymd_to_milliseconds(date):
+    return int(datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S').timestamp() * 1000)
 
 def populate_tables():
     wait_for_hbase()
@@ -330,6 +338,7 @@ def populate_tables():
     populate_trades(connection)
     populate_portfolio(connection)
     populate_popularity_to_instrument(connection)
+
 
 
 

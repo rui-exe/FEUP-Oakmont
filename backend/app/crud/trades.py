@@ -11,23 +11,32 @@ def java_long_to_number(java_long):
     number = struct.unpack('>q', java_long)[0]
     return number
 
+def increment_byte_array(byte_array:bytes):
+    #convert the byte array to a binary number
+    number = int.from_bytes(byte_array, "big")
+    #increment the number
+    number += 1
+    #convert the number back to a byte array
+    return number.to_bytes(len(byte_array), "big")
+
 def get_user_trades(db:Connection, username:str)->list[TradePublic]:
     user_table = db.table("user")
     trades = []
-    for key,data in user_table.row(username.encode("utf-8"),columns=[b"trades"]).items():
-        data = json.loads(data)
-        time_executed_reverse_ms = java_long_to_number(key[len("trades:"):])
-        time_executed_ms = LONG_MAX-time_executed_reverse_ms
+    for _,row in user_table.scan(row_start=username.encode("utf-8"), row_stop=increment_byte_array(username.encode("utf-8")), columns=[b"trades"], sorted_columns=True):
+        for column,data in row.items():
+            data = json.loads(data)
+            time_executed_reverse_ms = java_long_to_number(column[len("trades:"):])
+            time_executed_ms = LONG_MAX-time_executed_reverse_ms
 
-        print(data)
-        trade = {
-            "type": "buy" if data["type"]=="P" else "sell",
-            "symbol": data["symbol"],
-            "quantity": data["quantity"],
-            "price_per_item": data["price_per_item"]/100,
-            "time_executed": datetime.fromtimestamp(int(time_executed_ms/1000))
-        }
-        trades.append(trade)
+            trade = {
+                "type": "buy" if data["type"]=="P" else "sell",
+                "symbol": data["symbol"],
+                "quantity": data["quantity"],
+                "price_per_item": data["price_per_item"]/100,
+                "time_executed": datetime.fromtimestamp(int(time_executed_ms/1000))
+            }
+            trades.append(trade)
+        break
     return trades
 
 def get_user_portfolio(db:Connection, username:str)->list[Position]:

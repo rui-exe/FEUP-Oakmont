@@ -1,13 +1,46 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams , Link } from 'react-router-dom';
 import StockChart from './stockChart';
+import Trade from './trade';
+import { useAuth } from '../auth/AuthContext';
 
 const FinancialInstrumentPage = () => {
   const [financialInstrument, setFinancialInstrument] = useState(null);
+  const [mostRecentPrice, setMostRecentPrice] = useState(null); // State to store most recent price
   const { symbol } = useParams();
   const [posts, setPosts] = useState([]);
   const [begin, setBegin] = useState(0); // State to track the beginning index of posts
   const scrollToRef = useRef(null);
+  const { isAuthenticated } = useAuth();
+  const [balance, setBalance] = useState(0);
+
+
+  useEffect(() => {
+    // Fetch user balance
+    const username = localStorage.getItem('username');
+        const fetchBalance = async () => {
+          try {
+            const response = await fetch(`http://localhost:8081/users/${username}`);
+              if (!response.ok) {
+                if (response.status === 404) {
+                  throw new Error('User not found');
+                } else {
+                  throw new Error('Failed to fetch user data');
+                }
+              }
+              const userData = await response.json();
+              setBalance(userData.balance);
+          }
+          catch (error) {
+            console.error('Error fetching user balance:', error);
+          }
+        }
+        fetchBalance();
+    }
+  , []);
+
+
+    
 
   const scrollToTarget = () => {
     // Scroll to the target element
@@ -19,6 +52,15 @@ const FinancialInstrumentPage = () => {
       .then(response => response.json())
       .then(data => setFinancialInstrument(data))
       .catch(error => console.error('Error fetching financial instrument data:', error));
+
+    // Fetch most recent price for the provided symbol
+    // Fetch most recent price for the provided symbol
+    fetch(`http://localhost:8081/financial_instruments/${symbol}/price`)
+      .then(response => response.json())
+      .then(data => setMostRecentPrice(data.value.toFixed(2))) // Access 'value' directly and format it
+      .catch(error => console.error('Error fetching most recent price:', error));
+
+    
     // Fetch posts for the provided symbol and begin index
     const fetchPosts = async () => {
       try {
@@ -46,7 +88,7 @@ const FinancialInstrumentPage = () => {
   };
 
   // Render loading state if financial instrument data is not yet fetched
-  if (!financialInstrument) {
+  if (!financialInstrument || mostRecentPrice === null) {
     return <div>Loading...</div>;
   }
 
@@ -82,7 +124,7 @@ const FinancialInstrumentPage = () => {
   ];
 
   return (
-    <div className="max-w-3xl w-full space-y-8">
+    <div className="max-w-3xl w-full space-y-8 min-w-[40%]">
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
         <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
           <div className="flex-shrink-0">
@@ -103,10 +145,14 @@ const FinancialInstrumentPage = () => {
               <h1 className="text-2xl font-bold">{instrumentSymbol}</h1>
               <span className="text-gray-500 text-sm">{name}</span>
             </div>
-            <p className="text-gray-500">300.00 {currency}</p>
+            <p className="text-gray-500">
+              {mostRecentPrice !== null ? `${mostRecentPrice} ${currency}` : 'Loading...'}
+            </p>
           </div>
         </div>
       </div>
+      {/* Render trade component */}
+      {isAuthenticated && <Trade symbol={symbol} price={mostRecentPrice} balance={balance} />}
       <div className="max-w-3xl w-full space-y-8">
         <StockChart data={data} />
       </div>
