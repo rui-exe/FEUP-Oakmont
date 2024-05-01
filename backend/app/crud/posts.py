@@ -100,3 +100,93 @@ def create_new_post(db: Connection, post: dict) -> Post:
     # Update the timestamp in the original post dict
     post["timestamp"] = timestamp
     return post
+
+def search_symbol_posts(db:Connection, symbol:str,phrase:str) -> list[Post]:
+    """
+    Search the posts of a symbol by phrase
+    """
+    #split the phrase into words and get the posts where all the words appear 
+    words_table = db.table("letters")
+    posts = []
+    posts_ids = set()
+    for word in phrase.split():
+        #acces the row of the word in the table the word is the rowkey
+        row = words_table.row(word.encode("utf-8"))
+        #if the word is not in the table continue
+        if not row:
+            return []
+        #get the posts where the word appears
+        word_posts_id = set()
+        for column,data in row.items():
+            if column.decode("utf-8").startswith(f"posts:{symbol}_"):
+                word_posts_id.add(column)
+        # imtersect the posts of the word with the posts of the other words
+        if not posts_ids:
+            posts_ids = word_posts_id
+        else:
+            posts_ids = posts_ids.intersection(word_posts_id)
+                    
+    #get the posts from the symbol_posts table the key is post_id_symbol and the post is in the columns posts:value
+    symbol_posts_table = db.table("symbol_posts")
+    for post_id in posts_ids:
+        post_id = post_id.decode("utf-8")
+        symbol_id = post_id.split("_")[1]
+        post_row = symbol_posts_table.row(f"{symbol}_{symbol_id}".encode("utf-8"))
+        for column, post in post_row.items():
+            post = json.loads(post)
+            time_reverse_ms = java_long_to_number(column[len("posts:"):])
+            time_ms = MAX_LONG-time_reverse_ms
+
+            posts.append({
+                "username":post["username"],
+                "symbol": symbol,
+                "timestamp": datetime.datetime.fromtimestamp(int(time_ms/1000)),
+                "text": post["post"]
+            })
+
+    return posts
+    
+def search_user_posts(db:Connection, username:str, phrase:str) -> list[Post]:
+    """
+    Search the posts of a user by phrase
+    """
+    #split the phrase into words and get the posts where all the words appear 
+    words_table = db.table("letters")
+    posts = []
+    posts_ids = set()
+    for word in phrase.split():
+        #acces the row of the word in the table the word is the rowkey
+        row = words_table.row(word.encode("utf-8"))
+        #if the word is not in the table continue
+        if not row:
+            return []
+        #get the posts where the word appears
+        word_posts_id = set()
+        for column,data in row.items():
+            if column.decode("utf-8").startswith(f"posts:{username}_"):
+                word_posts_id.add(column)
+        # imtersect the posts of the word with the posts of the other words
+        if not posts_ids:
+            posts_ids = word_posts_id
+        else:
+            posts_ids = posts_ids.intersection(word_posts_id)
+                    
+    #get the posts from the user_posts table the key is post_id_user and the post is in the columns posts:value
+    user_posts_table = db.table("user_posts")
+    for post_id in posts_ids:
+        post_id = post_id.decode("utf-8")
+        user_id = post_id.split("_")[1]
+        post_row = user_posts_table.row(f"{username}_{user_id}".encode("utf-8"))
+        for column, post in post_row.items():
+            post = json.loads(post)
+            time_reverse_ms = java_long_to_number(column[len("posts:"):])
+            time_ms = MAX_LONG-time_reverse_ms
+
+            posts.append({
+                "username":username,
+                "symbol": post["symbol"],
+                "timestamp": datetime.datetime.fromtimestamp(int(time_ms/1000)),
+                "text": post["post"]
+            })
+
+    return posts

@@ -68,6 +68,13 @@ def get_user_posts(db:HBase, username:str, begin:int = 0):
   return crud_posts.get_user_posts(db, username, begin)
 
 
+@router.get("/{username}/posts/search/{phrase}")
+def search_user_posts(db:HBase, username:str, phrase:str):
+  """
+  Search the posts of a user by phrase.
+  """
+  return crud_posts.search_user_posts(db, username, phrase)
+
 @router.get("/{username}/trades")
 def get_user_trades(db:HBase, username:str) -> list[TradePublic]:
   """

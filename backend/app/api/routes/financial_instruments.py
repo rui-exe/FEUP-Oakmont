@@ -38,6 +38,13 @@ def get_symbol_posts(db:HBase, symbol:str = Path(..., description="Symbol of the
   """
   return crud_posts.get_symbol_posts(db, symbol, begin)
 
+@router.get("/{symbol}/posts/search/{phrase}")
+def search_symbol_posts(db:HBase, symbol:str = Path(..., description="Symbol of the financial instrument"), phrase:str=Path(..., description="Phrase to search in the posts")):
+  """
+  Search the posts of a symbol by phrase
+  """
+  return crud_posts.search_symbol_posts(db, symbol, phrase)
+
 @router.post("/post")
 def create_new_post(db: HBase, current_user: CurrentUser, post: PostBase):
     """
