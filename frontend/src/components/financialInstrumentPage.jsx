@@ -236,6 +236,7 @@ const FinancialInstrumentPage = () => {
                 <p className="text-gray-500 mt-2">{post.text}</p>
               </div>
             ))}
+            {posts.length === 0 && <p className="text-gray-500 mt-4">No posts found</p>}
           </div>
           {/* Pagination controls */}
           {!searchPhrase && ( // Render only if search is not active
