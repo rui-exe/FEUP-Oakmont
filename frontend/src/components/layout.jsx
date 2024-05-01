@@ -20,6 +20,11 @@ const Layout = ({ children }) => {
     navigate('/sign-in');
   };
 
+  // Function to close dropdown
+  const closeDropdown = () => {
+    setShowDropdown(false);
+  };
+
   useEffect(() => {
     // Check if the user is authenticated
     const accessToken = localStorage.getItem('accessToken');
@@ -29,39 +34,38 @@ const Layout = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    console.log('Search results:', searchResults);
   }, [searchResults]);
 
   useEffect(() => {
-    console.log('Dropdown visibility:', showDropdown);
   }, [showDropdown]);
 
   
   // Function to handle search
   const handleSearch = async (e) => {
-    const query = e.target.value;
+    let query = e.target.value;
     if (!query) {
-      console.log('Query is empty');
-      setSearchQuery('');
-      setSearchResults([]); 
-      setShowDropdown(false); 
-      console.log(showDropdown)
-      console.log(searchResults)
-      return;
+      setSearchQuery('zzzz');
+      
     }
-    console.log('Searching for:', query);
     setSearchQuery(query);
 
     // Make an HTTP request to the backend
     try {
+      if (query.length < 1) {
+        query = 'zzzz';
+      }
       const response = await fetch(`http://localhost:8081/financial_instruments/search/${query}`);
       if (!response.ok) {
         throw new Error('Failed to fetch search results');
       }
-      console.log('Response:', response);
       const data = await response.json();
-      setSearchResults(data);
-      setShowDropdown(true); // Show dropdown when search results are available
+      if (query === 'zzzz') {
+        setShowDropdown(false);
+      }
+      else {
+        setSearchResults(data);
+        setShowDropdown(true); // Show dropdown when search results are available
+      }
     } catch (error) {
       console.error('Error fetching search results:', error);
       setSearchResults([]); // Clear search results on error
@@ -90,7 +94,12 @@ const Layout = ({ children }) => {
                   {/* Dropdown content goes here */}
                   <ul>
                     {searchResults.map((result, index) => (
-                      <Link to={`/items/${result.symbol}`} key={index} className="block px-4 py-2 hover:bg-gray-100">
+                      // on cluck set searchQuery to '' and close dropdown
+                      <Link to={`/items/${result.symbol}`} key={index} className="block px-4 py-2 hover:bg-gray-100" onClick={()=>
+                      {
+                        setSearchQuery('');
+                        closeDropdown();
+                      }}>
                       <li key={index} className="px-4 py-2 hover:bg-gray-100">
                         {/* Render each search result */}
                         {result.symbol} {/* Example: Displaying the name of the result */}
