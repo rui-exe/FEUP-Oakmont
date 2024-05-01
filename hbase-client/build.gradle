@@ -17,6 +17,7 @@ dependencies {
     implementation "org.apache.hbase:hbase-common:${hbaseVersion}"
     implementation "org.apache.hbase:hbase-client:${hbaseVersion}"
     implementation "org.apache.hbase:hbase-server:${hbaseVersion}"
+    implementation "org.apache.hbase:hbase-mapreduce:${hbaseVersion}"
     implementation group: 'org.json', name: 'json', version: '20240303'
     implementation 'io.grpc:grpc-netty-shaded:1.63.0'
     implementation 'io.grpc:grpc-protobuf:1.63.0'

@@ -43,8 +43,12 @@ public class HbaseClientServer {
 
         TradeExecutorService tradeExecutorService = new TradeExecutorService(usersTable,portfolioTable,
                                                         financialInstrumentsTable,popularityToInstrumentTable);
+        InstrumentAnalyticsService instrumentAnalyticsService = new InstrumentAnalyticsService(config,connection);
 
-        server = serverBuilder.addService(tradeExecutorService).build();
+        serverBuilder.addService(tradeExecutorService);
+        serverBuilder.addService(instrumentAnalyticsService);
+
+        server = serverBuilder.build();
     }
 
     public void start() throws IOException {
