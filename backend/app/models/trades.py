@@ -20,6 +20,11 @@ class TradeCreate(BaseModel):
         if value != round(value, 2):
           raise HTTPException(status_code=422, detail="Price per item must have at most 2 decimal places")
         return value
+    @validator('quantity')
+    def check_quantity(cls, value):
+        if value < 1:
+          raise HTTPException(status_code=422, detail="Quantity must be greater than 0")
+        return value
     
 class TradePublic(TradeCreate):
     time_executed: datetime
