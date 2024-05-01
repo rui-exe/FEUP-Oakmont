@@ -2,6 +2,7 @@ from fastapi import APIRouter,Query,Path, HTTPException
 from app.api.deps import HBase,CurrentUser
 from app.crud import financial_instruments as financial_instruments_crud,posts as crud_posts
 from app.models.financial_instruments import FinancialInstrument,Tick
+from app.models.posts import PostBase
 from datetime import datetime,timedelta
 
 router = APIRouter()
@@ -37,22 +38,18 @@ def get_symbol_posts(db:HBase, symbol:str = Path(..., description="Symbol of the
   """
   return crud_posts.get_symbol_posts(db, symbol, begin)
 
-@router.post("/{symbol}/posts")
-def create_new_post(db: HBase, current_user: CurrentUser, symbol: str = Path(..., description="Symbol of the financial instrument"), text: str = Query(..., description="Text of the post")):
+@router.post("/post")
+def create_new_post(db: HBase, current_user: CurrentUser, post: PostBase):
     """
     Create a new post for a symbol.
     """
-    if not symbol:
-        raise HTTPException(status_code=400, detail="Symbol is required")
-    if not text:
-        raise HTTPException(status_code=400, detail="Text is required")
-    
-    post = crud_posts.create_new_post(db, {
+    post_data = {
         "username": current_user.username,
-        "symbol": symbol,
-        "text": text
-    })
-    return post
+        "symbol": post.symbol,
+        "text": post.text
+    }
+    crud_posts.create_new_post(db, post_data)
+    return {"message": "Post created successfully"}
 
 @router.get("/{symbol}/price")
 async def get_most_recent_price(db:HBase, symbol:str = Path(..., description="Symbol of the financial instrument")) -> Tick:
