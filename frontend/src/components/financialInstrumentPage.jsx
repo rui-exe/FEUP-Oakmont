@@ -147,8 +147,8 @@ const FinancialInstrumentPage = () => {
               <h1 className="text-2xl font-bold">{instrumentSymbol}</h1>
               <span className="text-gray-500 text-sm">{name}</span>
             </div>
-            <p className="text-gray-500">
-              {mostRecentPrice !== null ? `${mostRecentPrice} ${currency}` : 'Loading...'}
+            <p className="font-bold text-lg">
+               {mostRecentPrice !== null ? `$${mostRecentPrice}` : 'Loading...'}
             </p>
           </div>
         </div>
@@ -192,8 +192,8 @@ const FinancialInstrumentPage = () => {
                 <h3 className="text-lg font-semibold">
                   <Link to={`/users/${post.username}`}>{post.username}</Link>
                 </h3>
-                <p className="text-black-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
-                <p className="text-gray-500 mt-2">{post.text}</p>
+                <p className="text-gray-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
+                <p className="text-black-500 mt-2">{post.text}</p>
               </div>
             ))}
           </div>
