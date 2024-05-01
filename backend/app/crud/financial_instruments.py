@@ -85,6 +85,9 @@ def reverse_convert_ymd_to_milliseconds(date):
     return datetime.fromtimestamp(date/1000).strftime('%Y-%m-%d %H:%M:%S')
 
 def get_symbol_by_prefix(db:Connection, symbol_sub_string:str) -> list[FinancialInstrument]:
+    if len(symbol_sub_string) < 1:
+        return []
+    print(symbol_sub_string)
     financial_instruments = db.table("financial_instruments")
     symbols = []
     for key, data in financial_instruments.scan(row_prefix=symbol_sub_string.upper().encode("utf-8"), limit=5):
