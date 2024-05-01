@@ -84,6 +84,28 @@ const FinancialInstrumentPage = () => {
     setBegin(prevBegin => Math.max(0, prevBegin - 10)); // Decrement begin index by 100 for previous page
   };
 
+  // Handle search input change
+  const [searchPhrase, setSearchPhrase] = useState("");
+  const handleSearchInputChange = (value) => {
+    setSearchPhrase(value);
+  };
+
+  // Handle search
+  const handleSearch = async () => {
+    try {
+      const response = await fetch(`http://localhost:8081/financial_instruments/${symbol}/posts/search/${searchPhrase}`);
+      if (!response.ok) {
+        throw new Error('Failed to search posts');
+      }
+      const postsData = await response.json();
+      setPosts(postsData);
+    } catch (error) {
+      console.error('Error searching posts:', error);
+    }
+  };
+  
+
+
   // Handle post creation
   const handlePostCreation = async () => {
     try {
@@ -182,6 +204,24 @@ const FinancialInstrumentPage = () => {
         </div>
       )}
 
+      {/* Render search posts form with a button*/}
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="p-6 sm:p-8">
+          <h2 className="text-xl font-bold mb-4">Search Posts</h2>
+          <input
+            type="text"
+            placeholder="Search posts..."
+            className="w-full p-2 border border-gray-300 rounded-md"
+            value={searchPhrase}
+            onChange={e => handleSearchInputChange(e.target.value)}
+          />
+          <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-300" onClick={handleSearch}>
+            Search
+          </button>
+        </div>
+      </div>
+      
+
       {/* Render posts */}
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
         <div className="p-6 sm:p-8">
@@ -198,6 +238,7 @@ const FinancialInstrumentPage = () => {
             ))}
           </div>
           {/* Pagination controls */}
+          {!searchPhrase && ( // Render only if search is not active
           <div className="mt-4 flex justify-center">
             <button
               className="mr-2 px-4 py-2 bg-gray-200 rounded-md"
@@ -219,6 +260,7 @@ const FinancialInstrumentPage = () => {
               Next
             </button>
           </div>
+          )}
         </div>
       </div>
     </div>

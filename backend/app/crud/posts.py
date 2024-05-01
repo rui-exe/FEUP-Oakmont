@@ -143,6 +143,8 @@ def search_symbol_posts(db:Connection, symbol:str,phrase:str) -> list[Post]:
                 "timestamp": datetime.datetime.fromtimestamp(int(time_ms/1000)),
                 "text": post["post"]
             })
+    #sort the posts by timestamp
+    posts.sort(key=lambda x: x["timestamp"], reverse=True)
 
     return posts
     
@@ -189,4 +191,7 @@ def search_user_posts(db:Connection, username:str, phrase:str) -> list[Post]:
                 "text": post["post"]
             })
 
+    #sort the posts by timestamp
+    posts.sort(key=lambda x: x["timestamp"], reverse=True)
+    
     return posts

@@ -30,6 +30,27 @@ export default function Profile() {
     scrollToRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // Handle search input change
+  const [searchPhrase, setSearchPhrase] = useState("");
+  const handleSearchInputChange = (value) => {
+    setSearchPhrase(value);
+  };
+
+  // Handle search
+  const handleSearch = async () => {
+    try {
+      const response = await fetch(`http://localhost:8081/users/${username}/posts/search/${searchPhrase}`);
+      if (!response.ok) {
+        throw new Error('Failed to search posts');
+      }
+      const postsData = await response.json();
+      setPosts(postsData);
+    } catch (error) {
+      console.error('Error searching posts:', error);
+    }
+  };
+  
+
 
   // Fetch user data when the component mounts or when username prop changes
   useEffect(() => {
@@ -239,6 +260,23 @@ export default function Profile() {
         </div>
 
 
+        {/* Render search posts form with a button*/}
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          <div className="p-6 sm:p-8">
+            <h2 className="text-xl font-bold mb-4">Search Posts</h2>
+            <input
+              type="text"
+              placeholder="Search posts..."
+              className="w-full p-2 border border-gray-300 rounded-md"
+              value={searchPhrase}
+              onChange={e => handleSearchInputChange(e.target.value)}
+            />
+            <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-300" onClick={handleSearch}>
+              Search
+            </button>
+          </div>
+        </div>
+
         {/* Render posts */}
           <div className="bg-white shadow-sm rounded-lg overflow-hidden">
             <div className="p-6 sm:p-8">
@@ -258,7 +296,7 @@ export default function Profile() {
 
 
               {/* Pagination controls */}
-              {posts.length > 0 && (
+              {!searchPhrase && posts.length > 0 && ( // Render only if search is not active and there are posts
                 <div className="mt-4 flex justify-center">
                   <button
                     className="mr-2 px-4 py-2 bg-blue-500 rounded-md"
