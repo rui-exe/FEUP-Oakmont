@@ -72,7 +72,7 @@ export default function Trade({ price, balance, symbol }) {
                 <h2 className="text-xl font-bold mb-4">Available Balance to Trade</h2>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <span className="text-2xl">{balance.toFixed(2)} USD</span>
+                        <span className="text-2xl">${balance.toFixed(2)}</span>
                     </div>
                     <div className="flex gap-2">
                         <button
@@ -111,9 +111,9 @@ export default function Trade({ price, balance, symbol }) {
                             onChange={handleAmountChange}
                         />
                         {tradeType === 'buy' ? (
-                            <p className="text-black mb-4">Cost: {parseFloat(cost).toFixed(2)} USD</p>
+                            <p className="text-black mb-4">Cost: ${parseFloat(cost).toFixed(2)}</p>
                         ) : (
-                            <p className="text-black mb-4">Gain: {parseFloat(gain).toFixed(2)} USD</p>
+                            <p className="text-black mb-4">Gain: ${parseFloat(gain).toFixed(2)}</p>
                         )}
                         <div className="flex justify-end">
                             <button className="mr-2 px-4 py-2 bg-gray-300 text-gray-800 rounded-md" onClick={toggleTradeForm}>

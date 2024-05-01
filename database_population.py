@@ -10,10 +10,15 @@ from passlib.context import CryptContext
 import math
 import sys
 import struct
+from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 MAX_LONG = 2 ** 63 - 1
+
+
+default_password = "1234"
+HASHED_DEFAULT_PASSWORD = pwd_context.hash(default_password)
 
 def get_password_hash(password: str) -> str:
   """
@@ -103,7 +108,7 @@ def populate_users(connection):
         username = row['username']
         data[username.encode("utf-8")] = {
             b'info:name': row['name'].encode('utf-8'),
-            b'info:password': row['password'].encode('utf-8'),
+            b'info:password': HASHED_DEFAULT_PASSWORD.encode('utf-8'),
             b'info:email': row['email'].encode('utf-8'),
         }
         table = connection.table('user')

@@ -4,7 +4,9 @@ import FollowersCard from '../cards/FollowersCard';
 import FollowingCard from '../cards/FollowingCard';
 import FollowButton from './followButton';
 import {useAuth} from '../auth/AuthContext';
+import Portfolio from './portfolio';
 import Balance from './balance';
+
 
 export default function Profile() {
   // Get the username parameter from the URL
@@ -215,6 +217,12 @@ export default function Profile() {
           <Balance balance={userData.balance} />
         )}
 
+        {/* Render user portfolio */}
+        
+        {isAuthenticated && userData.username === localStorage.getItem('username') && (
+          <Portfolio/>
+        )}
+
 
         {/* Render trades */}
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
@@ -225,7 +233,7 @@ export default function Profile() {
                 <div key={index} className="bg-gray-100 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold"> <Link to={`/items/${trade.symbol}`}>{trade.symbol}</Link></h3>
                   <p className="text-black-500 mt-2">{new Date(trade.time_executed).toLocaleString()}</p>
-                  <p className="text-gray-500 mt-2">{trade.type.toUpperCase()}: {trade.quantity} shares at {trade.price_per_item}$ each</p>
+                  <p className="text-gray-500 mt-2">{trade.type.toUpperCase()}: {trade.quantity} shares at ${trade.price_per_item} each</p>
                 </div>
               ))}
             </div>

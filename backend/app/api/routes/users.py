@@ -76,12 +76,12 @@ def get_user_trades(db:HBase, username:str) -> list[TradePublic]:
   return crud_trades.get_user_trades(db, username)
 
 
-@router.get("/{username}/portfolio")
-def get_user_portfolio(db:HBase, username:str):
+@router.get("/me/portfolio")
+def get_user_portfolio(db:HBase, current_user:CurrentUser):
   """
-  Get the posts of a user.
+  Get the portfolio of the current user.
   """
-  return crud_trades.get_user_portfolio(db, username)
+  return crud_trades.get_user_portfolio(db, current_user.username)
 
 @router.get("/{username}/followers")
 def get_user_followers(db:HBase, username:str = Path(...,description="Username of the user to get the followers")):
