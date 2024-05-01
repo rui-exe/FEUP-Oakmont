@@ -9,6 +9,7 @@ const Layout = ({ children }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false); // State to control dropdown visibility
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Function to handle logout
   const handleLogout = () => {
@@ -34,44 +35,43 @@ const Layout = ({ children }) => {
   }, []);
 
   useEffect(() => {
-  }, [searchResults]);
+    const timerId = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 1000); // Adjust the debounce time as needed
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchQuery]);
 
   useEffect(() => {
-  }, [showDropdown]);
-
-  
-  // Function to handle search
-  const handleSearch = async (e) => {
-    let query = e.target.value;
-    if (!query) {
-      setSearchQuery('zzzz');
-      
-    }
-    setSearchQuery(query);
-
-    // Make an HTTP request to the backend
-    try {
-      if (query.length < 1) {
-        query = 'zzzz';
+    const fetchSearchResults = async () => {
+      if (debouncedSearch.length === 0) {
+        setShowDropdown(false);
+        return;
       }
-      const response = await fetch(`http://localhost:8081/financial_instruments/search/${query}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch search results');
-      }
-      const data = await response.json();
-      if (query === 'zzzz') {
+
+      try {
+        const response = await fetch(`http://localhost:8081/financial_instruments/search/${debouncedSearch}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch search results');
+        }
+        const data = await response.json();
+        if (data.length === 0) {
+          setShowDropdown(false);
+          return;
+        }
+        setSearchResults(data);
+        setShowDropdown(true);
+      } catch (error) {
+        console.error('Error fetching search results:', error);
+        setSearchResults([]);
         setShowDropdown(false);
       }
-      else {
-        setSearchResults(data);
-        setShowDropdown(true); // Show dropdown when search results are available
-      }
-    } catch (error) {
-      console.error('Error fetching search results:', error);
-      setSearchResults([]); // Clear search results on error
-      setShowDropdown(false); // Hide dropdown on error
-    }
-  };
+    };
+
+    fetchSearchResults();
+  }, [debouncedSearch]);
 
   return (
     <div>
@@ -85,7 +85,7 @@ const Layout = ({ children }) => {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={handleSearch}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search..."
                 className="border border-gray-300 rounded-md py-1 px-2 w-full focus:outline-none focus:ring focus:border-blue-300"
               />
