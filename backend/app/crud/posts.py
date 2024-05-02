@@ -111,6 +111,8 @@ def create_new_post(db: Connection, post: dict) -> Post:
     post_text = [word.strip(",.!?") for word in post_text]
     #remove enters
     post_text = [word.replace('\n','') for word in post_text]
+    #lower case
+    post_text = [word.lower() for word in post_text]
 
     letters = dict()
     for word in post_text:
