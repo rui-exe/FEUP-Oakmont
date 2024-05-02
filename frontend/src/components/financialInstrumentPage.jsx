@@ -183,7 +183,7 @@ const FinancialInstrumentPage = () => {
           <h2 className="text-xl font-bold mb-4">Stock Chart</h2>
         </div>
         <div className="max-w-3xl w-full space-y-8">
-          <StockChart data={data} />
+          <StockChart symbol={symbol} />
         </div>
       </div>
 
