@@ -2,6 +2,7 @@ from fastapi import APIRouter,Query,Path, HTTPException
 from app.api.deps import HBase,CurrentUser,InstrumentAnalytics
 from app.crud import financial_instruments as financial_instruments_crud,posts as crud_posts
 from app.models.financial_instruments import FinancialInstrument,Tick
+from app.models.posts import PostBase
 from datetime import datetime,timedelta
 from app.hbase_client.hbase_client_pb2 import InstrumentPricesRequest
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -63,22 +64,25 @@ def get_symbol_posts(db:HBase, symbol:str = Path(..., description="Symbol of the
   """
   return crud_posts.get_symbol_posts(db, symbol, begin)
 
-@router.post("/{symbol}/posts")
-def create_new_post(db: HBase, current_user: CurrentUser, symbol: str = Path(..., description="Symbol of the financial instrument"), text: str = Query(..., description="Text of the post")):
+@router.get("/{symbol}/posts/search/{phrase}")
+def search_symbol_posts(db:HBase, symbol:str = Path(..., description="Symbol of the financial instrument"), phrase:str=Path(..., description="Phrase to search in the posts")):
+  """
+  Search the posts of a symbol by phrase
+  """
+  return crud_posts.search_symbol_posts(db, symbol, phrase)
+
+@router.post("/post")
+def create_new_post(db: HBase, current_user: CurrentUser, post: PostBase):
     """
     Create a new post for a symbol.
     """
-    if not symbol:
-        raise HTTPException(status_code=400, detail="Symbol is required")
-    if not text:
-        raise HTTPException(status_code=400, detail="Text is required")
-    
-    post = crud_posts.create_new_post(db, {
+    post_data = {
         "username": current_user.username,
-        "symbol": symbol,
-        "text": text
-    })
-    return post
+        "symbol": post.symbol,
+        "text": post.text
+    }
+    crud_posts.create_new_post(db, post_data)
+    return {"message": "Post created successfully"}
 
 @router.get("/{symbol}/price")
 async def get_most_recent_price(db:HBase, symbol:str = Path(..., description="Symbol of the financial instrument")) -> Tick:
@@ -86,3 +90,10 @@ async def get_most_recent_price(db:HBase, symbol:str = Path(..., description="Sy
   Get the most recent price of a financial instrument
   """
   return financial_instruments_crud.get_most_recent_price(db, symbol)
+
+@router.get("/search/{prefix}")
+async def get_symbols_from_prefix(db:HBase, prefix:str = Path(..., description="Prefix of the symbol")) -> list[FinancialInstrument]:
+  """
+  Get the symbols from a prefix
+  """
+  return financial_instruments_crud.get_symbol_by_prefix(db, prefix)

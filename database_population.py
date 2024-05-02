@@ -10,10 +10,15 @@ from passlib.context import CryptContext
 import math
 import sys
 import struct
+from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 MAX_LONG = 2 ** 63 - 1
+
+
+default_password = "1234"
+HASHED_DEFAULT_PASSWORD = pwd_context.hash(default_password)
 
 def get_password_hash(password: str) -> str:
   """
@@ -62,7 +67,8 @@ def populate_table(connection, table_name, data):
     print(f"Opened table {table_name}")
     with table.batch() as batch:
         for row, columns in data.items():
-            batch.put(row, columns)
+            if (row != ''):
+                batch.put(row, columns)
 
 def convert_yfinance_symbol_info_to_hbase_dict(connection,symbol,currency,longName, website):
     data = dict()
@@ -103,7 +109,7 @@ def populate_users(connection):
         username = row['username']
         data[username.encode("utf-8")] = {
             b'info:name': row['name'].encode('utf-8'),
-            b'info:password': row['password'].encode('utf-8'),
+            b'info:password': HASHED_DEFAULT_PASSWORD.encode('utf-8'),
             b'info:email': row['email'].encode('utf-8'),
         }
         table = connection.table('user')
@@ -135,7 +141,20 @@ def populate_posts(connection):
     users = list(connection.table('user').scan())
     data_users = dict()
     data_symbols = dict()
-    for row in csv.DictReader(open("datasets/stock_tweets.csv")):
+    data_posts_by_symbol = dict()
+    data_posts_by_user = dict()
+    letters = dict()
+    post_id = 0
+    rows = []
+    with open("datasets/stock_tweets.csv", "r") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            rows.append(row)
+
+    # Shuffle the rows to randomize their order set with seed
+    random.seed(42)
+    random.shuffle(rows)
+    for row in rows[:25000]:
         username = random.choice(users)[0].decode('utf-8')
         post = row['Tweet']
         symbol = row['Stock Name']
@@ -153,8 +172,44 @@ def populate_posts(connection):
         symbol_posts_json = json.dumps({"username": username, "post": post})
         data_symbols[symbol][b'posts:' + date] = symbol_posts_json.encode('utf-8')
 
+        if f"{symbol}_{post_id}" not in data_posts_by_symbol:	
+            data_posts_by_symbol[f"{symbol}_{post_id}"] = {}
+        data_posts_by_symbol[f"{symbol}_{post_id}"][b'posts:' + date] = symbol_posts_json.encode('utf-8')
+
+        if f"{username}_{post_id}" not in data_posts_by_user:
+            data_posts_by_user[f"{username}_{post_id}"] = {}
+        data_posts_by_user[f"{username}_{post_id}"][b'posts:' + date] = user_posts_json.encode('utf-8')
+
+        #split the post into words and populate the letters table
+        post = post.split()
+        #remove pontuantion
+        post = [word.strip('.,!?') for word in post]
+        #remove enters 
+        post = [word.replace('\n','') for word in post]
+        #lower case the post
+        post = [word.lower() for word in post]
+
+        for word in post:
+            if word not in letters:
+                letters[word] = {}
+            letters[word][f'posts:{symbol}_{post_id}'] = b'1'
+            letters[word][f'posts:{username}_{post_id}'] = b'1'
+
+
+        post_id += 1
+    
+  
+    #create a counter in the symbol_posts table to store the last post_id use the counter_set method
+    symbol_table = connection.table('symbol_posts')
+    symbol_table.counter_set(b'info', b'info:post_id', post_id)
+
+
+
     populate_table(connection, 'user', data_users)
     populate_table(connection, 'financial_instruments', data_symbols)
+    populate_table(connection, 'symbol_posts', data_posts_by_symbol)
+    populate_table(connection, 'user_posts', data_posts_by_user)
+    populate_table(connection, 'letters', letters)
 
 
 

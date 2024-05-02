@@ -54,4 +54,4 @@ def get_user_portfolio(db:Connection, username:str)->list[Position]:
             "quantity": quantity,
             "money_invested": money_invested/100
         })
-    return positions
+    return sorted(positions, key=lambda x: x["money_invested"], reverse=True)

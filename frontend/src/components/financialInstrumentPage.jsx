@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams , Link } from 'react-router-dom';
+import { useParams , Link} from 'react-router-dom';
 import StockChart from './stockChart';
 import Trade from './trade';
 import { useAuth } from '../auth/AuthContext';
@@ -13,39 +13,37 @@ const FinancialInstrumentPage = () => {
   const scrollToRef = useRef(null);
   const { isAuthenticated } = useAuth();
   const [balance, setBalance] = useState(0);
-
+  const [newPostText, setNewPostText] = useState(""); // State to store new post text
 
   useEffect(() => {
     // Fetch user balance
     const username = localStorage.getItem('username');
-        const fetchBalance = async () => {
-          try {
-            const response = await fetch(`http://localhost:8081/users/${username}`);
-              if (!response.ok) {
-                if (response.status === 404) {
-                  throw new Error('User not found');
-                } else {
-                  throw new Error('Failed to fetch user data');
-                }
-              }
-              const userData = await response.json();
-              setBalance(userData.balance);
-          }
-          catch (error) {
-            console.error('Error fetching user balance:', error);
+    const fetchBalance = async () => {
+      try {
+        const response = await fetch(`http://localhost:8081/users/${username}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('User not found');
+          } else {
+            throw new Error('Failed to fetch user data');
           }
         }
-        fetchBalance();
+        const userData = await response.json();
+        setBalance(userData.balance);
+      }
+      catch (error) {
+        console.error('Error fetching user balance:', error);
+      }
     }
-  , []);
+    fetchBalance();
+  }, []);
 
-
-    
 
   const scrollToTarget = () => {
     // Scroll to the target element
     scrollToRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
   useEffect(() => {
     // Fetch financial instrument data for the provided symbol
     fetch(`http://localhost:8081/financial_instruments/${symbol}/info`)
@@ -53,7 +51,6 @@ const FinancialInstrumentPage = () => {
       .then(data => setFinancialInstrument(data))
       .catch(error => console.error('Error fetching financial instrument data:', error));
 
-    // Fetch most recent price for the provided symbol
     // Fetch most recent price for the provided symbol
     fetch(`http://localhost:8081/financial_instruments/${symbol}/price`)
       .then(response => response.json())
@@ -87,6 +84,55 @@ const FinancialInstrumentPage = () => {
     setBegin(prevBegin => Math.max(0, prevBegin - 10)); // Decrement begin index by 100 for previous page
   };
 
+  // Handle search input change
+  const [searchPhrase, setSearchPhrase] = useState("");
+  const handleSearchInputChange = (value) => {
+    setSearchPhrase(value);
+  };
+
+  // Handle search
+  const handleSearch = async () => {
+    try {
+      const response = await fetch(`http://localhost:8081/financial_instruments/${symbol}/posts/search/${searchPhrase}`);
+      if (!response.ok) {
+        throw new Error('Failed to search posts');
+      }
+      const postsData = await response.json();
+      setPosts(postsData);
+    } catch (error) {
+      console.error('Error searching posts:', error);
+    }
+  };
+  
+
+
+  // Handle post creation
+  const handlePostCreation = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('http://localhost:8081/financial_instruments/post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          symbol: symbol,
+          text: newPostText,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create post');
+      }
+      setNewPostText(""); // Clear the new post text input
+      console.log('Post created successfully');
+      window.location.reload(); // Reload the page to fetch the updated posts
+    } catch (error) {
+      console.error('Error creating post:', error);
+    }
+  };
+  
+
   // Render loading state if financial instrument data is not yet fetched
   if (!financialInstrument || mostRecentPrice === null) {
     return <div>Loading...</div>;
@@ -98,28 +144,6 @@ const FinancialInstrumentPage = () => {
   // Dummy data for demonstration
   const data = [
     {
-      id: 'Desktop',
-      data: [
-        { x: '2018-01-01', y: 7 },
-        { x: '2018-01-02', y: 5 },
-        { x: '2018-01-03', y: 11 },
-        { x: '2018-01-04', y: 9 },
-        { x: '2018-01-05', y: 12 },
-        { x: '2018-01-06', y: 16 },
-        { x: '2018-01-07', y: 13 },
-      ],
-    },
-    {
-      id: 'Mobile',
-      data: [
-        { x: '2018-01-01', y: 9 },
-        { x: '2018-01-02', y: 8 },
-        { x: '2018-01-03', y: 13 },
-        { x: '2018-01-04', y: 6 },
-        { x: '2018-01-05', y: 8 },
-        { x: '2018-01-06', y: 14 },
-        { x: '2018-01-07', y: 11 },
-      ],
     },
   ];
 
@@ -145,56 +169,106 @@ const FinancialInstrumentPage = () => {
               <h1 className="text-2xl font-bold">{instrumentSymbol}</h1>
               <span className="text-gray-500 text-sm">{name}</span>
             </div>
-            <p className="text-gray-500">
-              {mostRecentPrice !== null ? `${mostRecentPrice} ${currency}` : 'Loading...'}
+            <p className="font-bold text-lg">
+               {mostRecentPrice !== null ? `$${mostRecentPrice}` : 'Loading...'}
             </p>
           </div>
         </div>
       </div>
       {/* Render trade component */}
       {isAuthenticated && <Trade symbol={symbol} price={mostRecentPrice} balance={balance} />}
-      <div className="max-w-3xl w-full space-y-8">
-        <StockChart data={data} />
+      {/* Render stock chart */}
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="p-6 sm:p-8">
+          <h2 className="text-xl font-bold mb-4">Stock Chart</h2>
+        </div>
+        <div className="max-w-3xl w-full space-y-8">
+          <StockChart data={data} />
+        </div>
       </div>
-      {/* Render posts */}
+
+      {/* Render create post form */}
+      {isAuthenticated && (
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           <div className="p-6 sm:p-8">
-            <h2 ref={scrollToRef} className="text-xl font-bold mb-4">Posts</h2>
-            <div className="grid gap-4">
-              {posts.map((post, index) => (
-                <div key={index} className="bg-gray-100 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold">
-                    <Link to={`/users/${post.username}`}>{post.username}</Link>
-                  </h3>
-                  <p className="text-black-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
-                  <p className="text-gray-500 mt-2">{post.text}</p>
-                </div>
-              ))}
-            </div>
-            {/* Pagination controls */}
-              <div className="mt-4 flex justify-center">
-                <button
-                  className="mr-2 px-4 py-2 bg-gray-200 rounded-md"
-                  onClick={() => {
-                    handlePreviousPage();
-                    scrollToTarget();
-                  }}
-                  disabled={begin === 0}
-                >
-                  Previous
-                </button>
-                <button
-                  className="px-4 py-2 bg-gray-200 rounded-md"
-                  onClick={() => {
-                    handleNextPage();
-                    scrollToTarget();
-                  }}
-                >
-                  Next
-                </button>
-              </div>
+            <h2 className="text-xl font-bold mb-4">Create Post</h2>
+            <textarea
+              value={newPostText}
+              onChange={e => setNewPostText(e.target.value)}
+              placeholder="Write your post here..."
+              className="w-full p-2 border border-gray-300 rounded-md resize-none"
+              rows={4}
+            />
+            <button
+              onClick={handlePostCreation}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-300"
+            >
+              Post
+            </button>
           </div>
         </div>
+      )}
+
+      {/* Render search posts form with a button*/}
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="p-6 sm:p-8">
+          <h2 className="text-xl font-bold mb-4">Search Posts</h2>
+          <input
+            type="text"
+            placeholder="Search posts..."
+            className="w-full p-2 border border-gray-300 rounded-md"
+            value={searchPhrase}
+            onChange={e => handleSearchInputChange(e.target.value)}
+          />
+          <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-300" onClick={handleSearch}>
+            Search
+          </button>
+        </div>
+      </div>
+      
+
+      {/* Render posts */}
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="p-6 sm:p-8">
+          <h2 ref={scrollToRef} className="text-xl font-bold mb-4">Posts</h2>
+          <div className="grid gap-4">
+            {posts.map((post, index) => (
+              <div key={index} className="bg-gray-100 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold">
+                  <Link to={`/users/${post.username}`}>{post.username}</Link>
+                </h3>
+                <p className="text-gray-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
+                <p className="text-black-500 mt-2">{post.text}</p>
+              </div>
+            ))}
+            {posts.length === 0 && <p className="text-gray-500 mt-4">No posts found</p>}
+          </div>
+          {/* Pagination controls */}
+          {!searchPhrase && ( // Render only if search is not active
+          <div className="mt-4 flex justify-center">
+            <button
+              className="mr-2 px-4 py-2 bg-gray-200 rounded-md"
+              onClick={() => {
+                handlePreviousPage();
+                scrollToTarget();
+              }}
+              disabled={begin === 0}
+            >
+              Previous
+            </button>
+            <button
+              className="px-4 py-2 bg-gray-200 rounded-md"
+              onClick={() => {
+                handleNextPage();
+                scrollToTarget();
+              }}
+            >
+              Next
+            </button>
+          </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

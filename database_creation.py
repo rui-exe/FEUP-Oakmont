@@ -54,6 +54,28 @@ def create_tables():
         connection.create_table(portfolio_table_name, families)
         print(f"Table '{portfolio_table_name}' created.")
 
+    # Create table Letters for the Post's title
+    letters_table_name = 'letters'
+    if letters_table_name.encode() not in connection.tables():
+        families = {'posts': {}}
+        connection.create_table(letters_table_name, families)
+        print(f"Table '{letters_table_name}' created.")
+    
+
+    # Create table to store by symbol_postid the posts
+    symbol_posts_table_name = 'symbol_posts'
+    if symbol_posts_table_name.encode() not in connection.tables():
+        families = {'info':{}, 'posts': {}}
+        connection.create_table(symbol_posts_table_name, families)
+        print(f"Table '{symbol_posts_table_name}' created.")
+    
+    # Create table to store by user_id the posts
+    user_posts_table_name = 'user_posts'
+    if user_posts_table_name.encode() not in connection.tables():
+        families = {'posts': {}}
+        connection.create_table(user_posts_table_name, families)
+        print(f"Table '{user_posts_table_name}' created.")
+
     # Close the connection
     connection.close()
 
