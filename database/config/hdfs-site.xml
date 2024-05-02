@@ -1,0 +1,39 @@
+<configuration>
+  <property>
+      <name>dfs.replication</name>
+      <value>1</value>
+  </property>
+  <property>
+    <name>dfs.namenode.name.dir</name>
+    <value>/hdfs/namenode</value>
+  </property>
+  <property>
+    <name>dfs.datanode.data.dir</name>
+    <value>/hdfs/datanode</value>
+  </property>
+  <property>
+      <name>dfs.namenode.rpc-bind-host</name>
+      <value>0.0.0.0</value>
+  </property>
+  <property>
+      <name>dfs.namenode.servicerpc-bind-host</name>
+      <value>0.0.0.0</value>
+  </property>
+  <property>
+      <name>dfs.storage.policy.enabled</name>
+      <value>false</value>
+  </property>
+  <property>
+      <name>dfs.use.dfs.network.topology</name>
+      <value>false</value>
+  </property>
+  <property>
+      <name>dfs.namenode.redundancy.considerLoad</name>
+      <value>false</value>
+  </property>
+  <property>
+      <name>dfs.permissions.enabled</name>
+      <value>false</value>
+  </property>
+</configuration>
+

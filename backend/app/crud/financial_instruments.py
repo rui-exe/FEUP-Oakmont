@@ -22,26 +22,6 @@ def get_symbols(db:Connection) -> list[FinancialInstrument]:
     return symbols
 
 
-def get_instrument_prices(db:Connection, symbol:str, start_date:datetime, end_date:datetime, interval:timedelta)->list[Tick]:
-    instrument_prices = db.table("instrument_prices")
-    start_date_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
-    start_date_milliseconds = convert_ymd_to_milliseconds(start_date_str)
-    row_start = f"{symbol}_{start_date_milliseconds}"
-    end_date = end_date + timedelta(microseconds=1)
-    end_date_str = end_date.strftime('%Y-%m-%d %H:%M:%S')
-    row_stop = f"{symbol}_{end_date_str}"
-    
-    ticks = []
-    for row_key,data in instrument_prices.scan(row_start = row_start.encode("utf-8"), row_stop = row_stop.encode("utf-8")):
-        row_key_str = row_key.decode("utf-8")
-        timestamp = row_key_str.split("_")[1]
-        
-        ticks.append({
-            "timestamp":timestamp,
-            "value": data[b'series:val'].decode('utf-8')
-        })
-    return ticks
-
 def get_popular_symbols(db:Connection) -> list[FinancialInstrument]:
     popular_symbols = db.table("popularity_to_instrument")
     symbols = []

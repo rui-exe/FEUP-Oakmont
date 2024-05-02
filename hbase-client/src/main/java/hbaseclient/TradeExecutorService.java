@@ -1,6 +1,5 @@
 package hbaseclient;
 import io.grpc.stub.StreamObserver;
-import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.util.Bytes;

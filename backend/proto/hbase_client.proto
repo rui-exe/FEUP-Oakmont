@@ -1,5 +1,9 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+
 option java_package = "proto.hbaseclient";
 option java_multiple_files = true;
 package hbaseclient;
@@ -33,4 +37,24 @@ enum TradeResultType{
 
 message TradeResult{
     TradeResultType result = 1;
+}
+
+message Tick {
+    google.protobuf.Timestamp timestamp = 1;
+    double value = 2;
+}
+
+message InstrumentPricesRequest {
+    string symbol = 1;
+    google.protobuf.Timestamp start_date = 2;
+    google.protobuf.Timestamp end_date = 3;
+    google.protobuf.Duration time_delta = 4;
+}
+
+message InstrumentPricesResponse {
+    repeated Tick ticks = 1;
+}
+
+service InstrumentAnalytics{
+    rpc getInstrumentPrices(InstrumentPricesRequest) returns (InstrumentPricesResponse);
 }

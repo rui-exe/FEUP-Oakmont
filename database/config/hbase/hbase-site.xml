@@ -2,19 +2,18 @@
 <configuration>
     <property>
         <name>hbase.zookeeper.quorum</name>
-        <value>localhost</value>
+        <value>hadoop</value>
     </property>
     <property>
         <name>hbase.rootdir</name>
-        <value>file:////data/hbase</value>
+        <value>hdfs://hadoop:9000/hbase</value>
     </property>
     <property>
         <name>hbase.cluster.distributed</name>
         <value>true</value>
     </property>
     <property>
-        <name>hbase.unsafe.stream.capability.enforce</name>
-        <value>false</value>
+        <name>hbase.wal.provider</name>
+        <value>filesystem</value>
     </property>
-
 </configuration>

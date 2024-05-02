@@ -151,7 +151,17 @@ def search_symbol_posts(db:Connection, symbol:str,phrase:str) -> list[Post]:
     words_table = db.table("letters")
     posts = []
     posts_ids = set()
-    for word in phrase.split():
+    phrase = phrase.split()
+    #remove pontuantion
+    phrase = [word.strip(",.!?") for word in phrase]
+    #remove enters
+    phrase = [word.replace('\n','') for word in phrase]
+    #lower case
+    phrase = [word.lower() for word in phrase]
+
+
+
+    for word in phrase:
         #acces the row of the word in the table the word is the rowkey
         row = words_table.row(word.encode("utf-8"))
         #if the word is not in the table continue
@@ -198,7 +208,15 @@ def search_user_posts(db:Connection, username:str, phrase:str) -> list[Post]:
     words_table = db.table("letters")
     posts = []
     posts_ids = set()
-    for word in phrase.split():
+    phrase = phrase.split()
+    #remove pontuantion
+    phrase = [word.strip(",.!?") for word in phrase]
+    #remove enters
+    phrase = [word.replace('\n','') for word in phrase]
+    #lower case
+    phrase = [word.lower() for word in phrase]
+    
+    for word in phrase:
         #acces the row of the word in the table the word is the rowkey
         row = words_table.row(word.encode("utf-8"))
         #if the word is not in the table continue

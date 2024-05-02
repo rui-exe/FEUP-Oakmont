@@ -12,9 +12,11 @@ from google.protobuf.internal import builder as _builder
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
+from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12hbase_client.proto\x12\x0bhbaseclient\"\xa6\x01\n\x05Trade\x12\x10\n\x08username\x18\x01 \x01(\t\x12$\n\x04type\x18\x02 \x01(\x0e\x32\x16.hbaseclient.TradeType\x12\x0e\n\x06symbol\x18\x03 \x01(\t\x12\x10\n\x08quantity\x18\x04 \x01(\x03\x12\x16\n\x0eprice_per_item\x18\x05 \x01(\x03\x12\x14\n\x0ctime_offered\x18\x06 \x01(\x03\x12\x15\n\rtime_executed\x18\x07 \x01(\x03\";\n\x0bTradeResult\x12,\n\x06result\x18\x01 \x01(\x0e\x32\x1c.hbaseclient.TradeResultType*\x1e\n\tTradeType\x12\x07\n\x03\x42UY\x10\x00\x12\x08\n\x04SELL\x10\x01*t\n\x0fTradeResultType\x12\x1e\n\x1aTRADE_EXECUTED_SUCCESFULLY\x10\x00\x12\x14\n\x10WRONG_TRADE_TYPE\x10\x01\x12\x0e\n\nNOT_ENOUGH\x10\x02\x12\x1b\n\x17UNEXPECTED_SERVER_ERROR\x10\x03\x32\x96\x01\n\rTradeExecutor\x12\x41\n\x0f\x65xecuteBuyTrade\x12\x12.hbaseclient.Trade\x1a\x18.hbaseclient.TradeResult\"\x00\x12\x42\n\x10\x65xecuteSellTrade\x12\x12.hbaseclient.Trade\x1a\x18.hbaseclient.TradeResult\"\x00\x42\x15\n\x11proto.hbaseclientP\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12hbase_client.proto\x12\x0bhbaseclient\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\"\xa6\x01\n\x05Trade\x12\x10\n\x08username\x18\x01 \x01(\t\x12$\n\x04type\x18\x02 \x01(\x0e\x32\x16.hbaseclient.TradeType\x12\x0e\n\x06symbol\x18\x03 \x01(\t\x12\x10\n\x08quantity\x18\x04 \x01(\x03\x12\x16\n\x0eprice_per_item\x18\x05 \x01(\x03\x12\x14\n\x0ctime_offered\x18\x06 \x01(\x03\x12\x15\n\rtime_executed\x18\x07 \x01(\x03\";\n\x0bTradeResult\x12,\n\x06result\x18\x01 \x01(\x0e\x32\x1c.hbaseclient.TradeResultType\"D\n\x04Tick\x12-\n\ttimestamp\x18\x01 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\r\n\x05value\x18\x02 \x01(\x01\"\xb6\x01\n\x17InstrumentPricesRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12.\n\nstart_date\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12,\n\x08\x65nd_date\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12-\n\ntime_delta\x18\x04 \x01(\x0b\x32\x19.google.protobuf.Duration\"<\n\x18InstrumentPricesResponse\x12 \n\x05ticks\x18\x01 \x03(\x0b\x32\x11.hbaseclient.Tick*\x1e\n\tTradeType\x12\x07\n\x03\x42UY\x10\x00\x12\x08\n\x04SELL\x10\x01*t\n\x0fTradeResultType\x12\x1e\n\x1aTRADE_EXECUTED_SUCCESFULLY\x10\x00\x12\x14\n\x10WRONG_TRADE_TYPE\x10\x01\x12\x0e\n\nNOT_ENOUGH\x10\x02\x12\x1b\n\x17UNEXPECTED_SERVER_ERROR\x10\x03\x32\x96\x01\n\rTradeExecutor\x12\x41\n\x0f\x65xecuteBuyTrade\x12\x12.hbaseclient.Trade\x1a\x18.hbaseclient.TradeResult\"\x00\x12\x42\n\x10\x65xecuteSellTrade\x12\x12.hbaseclient.Trade\x1a\x18.hbaseclient.TradeResult\"\x00\x32y\n\x13InstrumentAnalytics\x12\x62\n\x13getInstrumentPrices\x12$.hbaseclient.InstrumentPricesRequest\x1a%.hbaseclient.InstrumentPricesResponseB\x15\n\x11proto.hbaseclientP\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -22,14 +24,22 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'hbase_client_pb2', _globals
 if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['DESCRIPTOR']._options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\021proto.hbaseclientP\001'
-  _globals['_TRADETYPE']._serialized_start=265
-  _globals['_TRADETYPE']._serialized_end=295
-  _globals['_TRADERESULTTYPE']._serialized_start=297
-  _globals['_TRADERESULTTYPE']._serialized_end=413
-  _globals['_TRADE']._serialized_start=36
-  _globals['_TRADE']._serialized_end=202
-  _globals['_TRADERESULT']._serialized_start=204
-  _globals['_TRADERESULT']._serialized_end=263
-  _globals['_TRADEEXECUTOR']._serialized_start=416
-  _globals['_TRADEEXECUTOR']._serialized_end=566
+  _globals['_TRADETYPE']._serialized_start=647
+  _globals['_TRADETYPE']._serialized_end=677
+  _globals['_TRADERESULTTYPE']._serialized_start=679
+  _globals['_TRADERESULTTYPE']._serialized_end=795
+  _globals['_TRADE']._serialized_start=101
+  _globals['_TRADE']._serialized_end=267
+  _globals['_TRADERESULT']._serialized_start=269
+  _globals['_TRADERESULT']._serialized_end=328
+  _globals['_TICK']._serialized_start=330
+  _globals['_TICK']._serialized_end=398
+  _globals['_INSTRUMENTPRICESREQUEST']._serialized_start=401
+  _globals['_INSTRUMENTPRICESREQUEST']._serialized_end=583
+  _globals['_INSTRUMENTPRICESRESPONSE']._serialized_start=585
+  _globals['_INSTRUMENTPRICESRESPONSE']._serialized_end=645
+  _globals['_TRADEEXECUTOR']._serialized_start=798
+  _globals['_TRADEEXECUTOR']._serialized_end=948
+  _globals['_INSTRUMENTANALYTICS']._serialized_start=950
+  _globals['_INSTRUMENTANALYTICS']._serialized_end=1071
 # @@protoc_insertion_point(module_scope)

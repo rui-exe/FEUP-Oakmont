@@ -14,7 +14,7 @@ from app.models.tokens import TokenPayload
 import app.crud.users as crud_users
 import happybase
 import grpc
-from app.hbase_client.hbase_client_pb2_grpc import TradeExecutorStub
+from app.hbase_client.hbase_client_pb2_grpc import TradeExecutorStub,InstrumentAnalyticsStub
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="/oauth/token")
 
@@ -59,3 +59,10 @@ def get_trade_executor_stub():
       yield TradeExecutorStub(channel)
     
 TradeExecutor = Annotated[TradeExecutorStub, Depends(get_trade_executor_stub)]
+
+
+def get_instrument_analytics_stub():
+  with grpc.insecure_channel(f"{settings.HBASE_CLIENT_HOST}:{settings.HBASE_CLIENT_PORT}") as channel:
+      yield InstrumentAnalyticsStub(channel)
+    
+InstrumentAnalytics = Annotated[InstrumentAnalyticsStub, Depends(get_instrument_analytics_stub)]
