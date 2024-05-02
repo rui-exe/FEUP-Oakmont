@@ -86,6 +86,7 @@ public class InstrumentAnalyticsService extends InstrumentAnalyticsGrpc.Instrume
         String randomTableName = "tmp_" + UUID.randomUUID().toString().replace("-", "");
         createResultTable(randomTableName);
         conf.setLong("delta", request.getTimeDelta().getSeconds()*1000);
+        conf.setLong("start.date", request.getStartDate().getSeconds()*1000);
 
         Job job = Job.getInstance(conf, "CalculateInstrumentPrices");
 
@@ -100,12 +101,6 @@ public class InstrumentAnalyticsService extends InstrumentAnalyticsGrpc.Instrume
             Bytes.toBytes(request.getSymbol() + "_"),
             Bytes.toBytes(request.getEndDate().getSeconds() * 1000)
         );
-
-        System.out.println("Start date: " + request.getStartDate());
-        System.out.println("End date: " + request.getEndDate());
-
-        System.out.println("Start row: " + request.getSymbol() + "_" + request.getStartDate().getSeconds() * 1000);
-        System.out.println("End row: " + request.getSymbol() + "_" + request.getEndDate().getSeconds() * 1000);
 
         scan.withStartRow(startRow);
         scan.withStopRow(endRow,true);
@@ -175,10 +170,16 @@ public class InstrumentAnalyticsService extends InstrumentAnalyticsGrpc.Instrume
 
             if (underscoreIndex != -1 && underscoreIndex < rowKey.get().length - 1) {
                 byte[] timestampBytes = Arrays.copyOfRange(rowKey.get(), underscoreIndex + 1, rowKey.get().length);
-                long timestamp = Bytes.toLong(timestampBytes);
+                long intervalStart = Bytes.toLong(timestampBytes);
                 String priceValueStr = Bytes.toString(result.getValue(Bytes.toBytes("series"), Bytes.toBytes("val")));
                 double priceValue = Double.parseDouble(priceValueStr);
-                long intervalStart = timestamp - (timestamp % context.getConfiguration().getLong("interval", 60000)); // Default interval 1 minute
+                long delta = context.getConfiguration().getLong("delta", 24*60*60*1000); // Default interval 1 day
+                long startDate = context.getConfiguration().getLong("start.date", 0); // Default is epoch start
+                
+                intervalStart -= startDate; //so start date aligns with the first beggining of the first aggregation bucket
+                intervalStart -= (intervalStart%delta); 
+                intervalStart += startDate; //add back start date
+                
                 interval.set(intervalStart);
                 price.set(priceValue);
                 context.write(interval, price);
