@@ -238,6 +238,7 @@ const FinancialInstrumentPage = () => {
                   <Link to={`/users/${post.username}`}>{post.username}</Link>
                 </h3>
                 <p className="text-gray-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
+                <p className="text-gray-500 mt-2">ID: {post.post_id}</p>
                 <p className="text-black-500 mt-2">{post.text}</p>
               </div>
             ))}

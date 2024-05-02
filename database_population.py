@@ -70,6 +70,15 @@ def populate_table(connection, table_name, data):
             if (row != ''):
                 batch.put(row, columns)
 
+def populate_user_posts(connection, data):
+    table = connection.table('user_posts')
+    print(f"Opened table user_posts")
+    for row, columns in data.items():
+        if (row != ''):
+            for date, value in columns.items():
+                date_ms = MAX_LONG - java_long_to_number(date[len('posts:'):])
+                table.put(row, {date: value}, timestamp=date_ms)
+
 def convert_yfinance_symbol_info_to_hbase_dict(connection,symbol,currency,longName, website):
     data = dict()
     data[symbol.encode("utf-8")] = {
@@ -208,7 +217,7 @@ def populate_posts(connection):
     populate_table(connection, 'user', data_users)
     populate_table(connection, 'financial_instruments', data_symbols)
     populate_table(connection, 'symbol_posts', data_posts_by_symbol)
-    populate_table(connection, 'user_posts', data_posts_by_user)
+    populate_user_posts(connection, data_posts_by_user)
     populate_table(connection, 'letters', letters)
 
 

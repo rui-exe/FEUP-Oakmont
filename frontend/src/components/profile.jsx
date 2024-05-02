@@ -111,6 +111,7 @@ export default function Profile() {
           setBegin(prevBegin => Math.max(0, prevBegin - 10)); // Decrement begin index by 10 if no posts are found
         }
         setPosts(postsData);
+        console.log(postsData);
       } catch (error) {
         console.error('Error fetching posts:', error);
       }
@@ -295,8 +296,9 @@ export default function Profile() {
                     <h3 className="text-lg font-semibold">
                       <Link to={`/items/${post.symbol}`}>{post.symbol}</Link>
                     </h3>
-                    <p className="text-black-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
-                    <p className="text-gray-500 mt-2">{post.text}</p>
+                    <p className="text-gray-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
+                    <p className="text-gray-500 mt-2">ID: {post.post_id}</p>
+                    <p className="text-black-500 mt-2">{post.text}</p>
                   </div>
                 ))}
                 {posts.length === 0 && <p className="text-gray-500 mt-4">No posts found</p>}

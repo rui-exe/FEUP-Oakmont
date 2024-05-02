@@ -1,5 +1,6 @@
 from app.models.posts import Post
 from happybase import Connection
+from fastapi import HTTPException
 import time
 import datetime
 import json
@@ -38,7 +39,8 @@ def get_user_posts(db:Connection, username:str,begin:int)->list[Post]:
                 "username":username,
                 "symbol": data["symbol"],
                 "timestamp": datetime.datetime.fromtimestamp(int(time_ms/1000)),
-                "text": data["post"]
+                "text": data["post"],
+                "post_id": data["post_id"]
             })
         break
     return posts[begin:begin+10]
@@ -58,7 +60,8 @@ def get_symbol_posts(db:Connection, symbol:str, begin:int)->list[Post]:
                 "username":data["username"],
                 "symbol": symbol,
                 "timestamp": datetime.datetime.fromtimestamp(int(time_ms/1000)),
-                "text": data["post"]
+                "text": data["post"],
+                "post_id": data["post_id"]
             })
         break
     return posts[begin:begin+10]
@@ -217,12 +220,10 @@ def search_user_posts(db:Connection, username:str, phrase:str) -> list[Post]:
     for post_id in posts_ids:
         post_id = post_id.decode("utf-8")
         user_id = post_id.split("_")[1]
-        post_row = user_posts_table.row(f"{username}_{user_id}".encode("utf-8"))
-        for column, post in post_row.items():
-            post = json.loads(post)
-            time_reverse_ms = java_long_to_number(column[len("posts:"):])
-            time_ms = MAX_LONG-time_reverse_ms
-
+        post_row = user_posts_table.row(f"{username}_{user_id}".encode("utf-8"), include_timestamp=True)
+        for _, version in post_row.items():
+            post = json.loads(version[0])
+            time_ms = version[1]
             posts.append({
                 "username":username,
                 "symbol": post["symbol"],
@@ -234,3 +235,84 @@ def search_user_posts(db:Connection, username:str, phrase:str) -> list[Post]:
     posts.sort(key=lambda x: x["timestamp"], reverse=True)
     
     return posts
+
+def get_post_by_id_versions(db:Connection, username:str, id:int)->list[Post]:
+    """
+    Get a post by its id and username
+    """
+    user_table = db.table("user_posts")
+    post_row = user_table.row(f"{username}_{id}", include_timestamp=True)
+    print("post_row",post_row)
+    posts = []
+    for _, version in post_row.items():
+        post = json.loads(version[0])
+        time_ms = version[1]
+
+        posts.append({
+            "username":username,
+            "symbol": post["symbol"],
+            "timestamp": datetime.datetime.fromtimestamp(int(time_ms/1000)),
+            "text": post["post"]
+        })
+    return posts
+
+def edit_post(db:Connection, post:dict):
+    user_posts_table = db.table("user_posts")
+    symbol_posts_table = db.table("symbol_posts")
+    user_table = db.table("user")
+    financial_table = db.table("financial_instruments")
+    time_reverse_ms = 0
+
+    post_row = user_posts_table.row(f"{post['username']}_{post['post_id']}")
+    print("post_row",post_row)
+    if not post_row:
+        raise HTTPException(status_code=404, detail="Post not found or you lack permissions to edit it")
+    posts = []
+    for column, _ in post_row.items():
+        time_reverse_ms = java_long_to_number(column[len("posts:"):])
+        original_javatime = column[len("posts:"):]
+        break
+    #put the new post in the user_table, financial_table, user_posts_table, symbol_posts_table
+    timestamp = MAX_LONG - time_reverse_ms
+    timestamp = number_to_java_long(timestamp)
+    post_data = json.dumps({
+        "username": post["username"],
+        "symbol": post["symbol"],
+        "post": post["text"],
+        "post_id": post["post_id"],
+    }).encode("utf-8")
+
+    user_post_column = b"posts:" + original_javatime
+    financial_post_column = b"posts:" + original_javatime
+
+    print("original_javatime",original_javatime)
+
+    user_batch_data = {
+        post["username"].encode("utf-8"): {user_post_column: post_data}
+    }
+    
+    financial_batch_data = {
+        post["symbol"].encode("utf-8"): {financial_post_column: post_data}
+    }
+
+    data_posts_by_symbol = dict()
+    data_posts_by_user = dict()
+    #create the post_id_symbol and post_id_user columns
+    data_posts_by_symbol[f"{post['symbol']}_{post['post_id']}"] = {b'posts:' + timestamp: post_data}
+    data_posts_by_user[f"{post['username']}_{post['post_id']}"] = {b'posts:' + timestamp: post_data}
+
+
+
+    # start the batch operations
+    with user_table.batch() as user_batch, financial_table.batch() as financial_batch, symbol_posts_table.batch() as symbol_posts_batch, user_posts_table.batch() as user_posts_batch:
+        for user_row, user_columns in user_batch_data.items():
+            user_batch.put(user_row, user_columns)
+        for financial_row, financial_columns in financial_batch_data.items():
+            financial_batch.put(financial_row, financial_columns)
+        for symbol_row, symbol_columns in data_posts_by_symbol.items():
+            symbol_posts_batch.put(symbol_row.encode("utf-8"), symbol_columns)
+        for user_row, user_columns in data_posts_by_user.items():
+            user_posts_batch.put(user_row.encode("utf-8"), user_columns)
+    
+    return post
+    
