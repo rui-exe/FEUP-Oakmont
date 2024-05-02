@@ -73,10 +73,15 @@ def create_new_post(db: Connection, post: dict) -> Post:
     timestamp = MAX_LONG - timestamp
     timestamp = number_to_java_long(timestamp)
     
+    #get last post id from the symbol_post table counter and increment it that is saved in this symbol_table.counter_set(b'info', b'post_id', post_id)
+    symbol_posts_table = db.table("symbol_posts")
+    post_id = symbol_posts_table.counter_inc(b"info", b"info:post_id", 1)
+
     post_data = json.dumps({
         "username": post["username"],
         "symbol": post["symbol"],
-        "post": post["text"]
+        "post": post["text"],
+        "post_id": post_id,
     }).encode("utf-8")
 
     user_post_column = b"posts:" + timestamp
@@ -89,10 +94,6 @@ def create_new_post(db: Connection, post: dict) -> Post:
     financial_batch_data = {
         post["symbol"].encode("utf-8"): {financial_post_column: post_data}
     }
-
-    #get last post id from the symbol_post table counter and increment it that is saved in this symbol_table.counter_set(b'info', b'post_id', post_id)
-    symbol_posts_table = db.table("symbol_posts")
-    post_id = symbol_posts_table.counter_inc(b"info", b"info:post_id", 1)
 
     data_posts_by_symbol = dict()
     data_posts_by_user = dict()

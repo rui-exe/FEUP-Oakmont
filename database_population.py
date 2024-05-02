@@ -164,12 +164,12 @@ def populate_posts(connection):
 
         if username not in data_users:
             data_users[username] = {}
-        user_posts_json = json.dumps({"symbol": symbol, "post": post})
+        user_posts_json = json.dumps({"symbol": symbol, "post": post, "post_id": post_id})
         data_users[username][b'posts:' + date] = user_posts_json.encode('utf-8')
        
         if symbol not in data_symbols:
             data_symbols[symbol] = {}
-        symbol_posts_json = json.dumps({"username": username, "post": post})
+        symbol_posts_json = json.dumps({"username": username, "post": post, "post_id": post_id})
         data_symbols[symbol][b'posts:' + date] = symbol_posts_json.encode('utf-8')
 
         if f"{symbol}_{post_id}" not in data_posts_by_symbol:	
