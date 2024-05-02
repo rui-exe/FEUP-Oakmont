@@ -186,6 +186,8 @@ def populate_posts(connection):
         post = [word.strip('.,!?') for word in post]
         #remove enters 
         post = [word.replace('\n','') for word in post]
+        #lower case the post
+        post = [word.lower() for word in post]
 
         for word in post:
             if word not in letters:
