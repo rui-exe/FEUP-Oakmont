@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import hbase_client_pb2 as hbase__client__pb2
+import app.hbase_client.hbase_client_pb2 as hbase__client__pb2
 
 
 class TradeExecutorStub(object):

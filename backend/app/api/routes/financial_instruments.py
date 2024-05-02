@@ -1,8 +1,11 @@
 from fastapi import APIRouter,Query,Path, HTTPException
-from app.api.deps import HBase,CurrentUser
+from app.api.deps import HBase,CurrentUser,InstrumentAnalytics
 from app.crud import financial_instruments as financial_instruments_crud,posts as crud_posts
 from app.models.financial_instruments import FinancialInstrument,Tick
 from datetime import datetime,timedelta
+from app.hbase_client.hbase_client_pb2 import InstrumentPricesRequest
+from google.protobuf.timestamp_pb2 import Timestamp
+from google.protobuf.duration_pb2 import Duration
 
 router = APIRouter()
 
@@ -13,15 +16,38 @@ async def get_financial_instruments(db:HBase) -> list[FinancialInstrument]:
   """
   return financial_instruments_crud.get_symbols(db)
 
-@router.get("/{symbol}")
+@router.get("/{symbol}/prices")
 async def get_financial_instruments_with_params(
-    db: HBase,
+    instrument_analytics: InstrumentAnalytics,
     symbol: str = Path(..., description="Symbol of the financial instrument"),
-    start_date: datetime = Query(..., description="Start date for the interval"),
-    end_date: datetime = Query(..., description="End date for the interval"),
-    interval: timedelta = Query(..., description="Interval for the tick data")
+    start_date: datetime = Query(..., description="Start date for the timeseries"),
+    end_date: datetime = Query(..., description="End date for the timeseries"),
+    sampling_period: timedelta = Query(..., description="Time interval for sampling")
 ) -> list[Tick]:
-    return financial_instruments_crud.get_instrument_prices(db, symbol, start_date, end_date, interval)
+  
+    start_date_timestamp:Timestamp = Timestamp()
+    start_date_timestamp.FromDatetime(start_date)
+
+    end_date_timestamp:Timestamp = Timestamp()
+    end_date_timestamp.FromDatetime(end_date)
+    
+    time_delta = Duration()
+    time_delta.FromTimedelta(sampling_period)
+
+    grpc_request = InstrumentPricesRequest(
+        symbol=symbol,
+        start_date=start_date_timestamp,
+        end_date=end_date_timestamp,
+        time_delta=time_delta
+    )
+
+    # Call gRPC method
+    grpc_response = instrument_analytics.getInstrumentPrices(grpc_request)
+
+    # Convert gRPC response to Python objects
+    ticks = [Tick(timestamp=tick.timestamp.ToDatetime(), value=tick.value) for tick in grpc_response.ticks]
+
+    return ticks
 
 @router.get("/{symbol}/info")
 async def get_finstrument_info(db:HBase, symbol:str = Path(..., description="Symbol of the financial instrument")):

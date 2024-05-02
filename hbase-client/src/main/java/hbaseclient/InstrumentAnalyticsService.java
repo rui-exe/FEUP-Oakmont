@@ -3,6 +3,7 @@ package hbaseclient;
 import com.google.protobuf.Timestamp;
 import io.grpc.stub.StreamObserver;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
@@ -10,9 +11,11 @@ import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.mapreduce.Job;
+import org.bouncycastle.util.Arrays;
+
 import proto.hbaseclient.InstrumentAnalyticsGrpc;
 import proto.hbaseclient.InstrumentPricesRequest;
 import proto.hbaseclient.InstrumentPricesResponse;
@@ -20,6 +23,9 @@ import proto.hbaseclient.Tick;
 
 import java.io.IOException;
 import java.util.UUID;
+
+import java.nio.charset.StandardCharsets;
+
 
 public class InstrumentAnalyticsService extends InstrumentAnalyticsGrpc.InstrumentAnalyticsImplBase {
 
@@ -47,29 +53,63 @@ public class InstrumentAnalyticsService extends InstrumentAnalyticsGrpc.Instrume
     }
 
 
-    private void createTable(String name) throws IOException {
+    private void createResultTable(String name) throws IOException {
         Admin admin = connection.getAdmin();
-        TableDescriptor tableDescriptor = TableDescriptorBuilder.newBuilder(TableName.valueOf(name)).build();
+        TableDescriptorBuilder tableDescriptorBuilder = TableDescriptorBuilder.newBuilder(TableName.valueOf(name));
+        ColumnFamilyDescriptor columnFamilyDescriptor = ColumnFamilyDescriptorBuilder.newBuilder(RESULT_CF).build();
+        tableDescriptorBuilder.setColumnFamily(columnFamilyDescriptor);
+        TableDescriptor tableDescriptor = tableDescriptorBuilder.build();
         admin.createTable(tableDescriptor);
         admin.close();
     }
 
-    private void deleteTable(String name) throws IOException{
+    private void deleteResultTable(String name) throws IOException{
         Admin admin = connection.getAdmin();
         admin.disableTable(TableName.valueOf(name));
         admin.deleteTable(TableName.valueOf(name));
         admin.close();
     }
 
+    public static byte[] combineBytes(byte[] array1, byte[] array2){
+        int combinedLength = array1.length + array2.length;
+
+        byte[] combinedArray = new byte[combinedLength];
+
+        System.arraycopy(array1, 0, combinedArray, 0, array1.length);
+
+        System.arraycopy(array2, 0, combinedArray, array1.length, array2.length);
+        
+        return combinedArray;
+    }
+
     private InstrumentPricesResponse calculateAggregatedPrices(InstrumentPricesRequest request) throws IOException, InterruptedException, ClassNotFoundException {
         String randomTableName = "tmp_" + UUID.randomUUID().toString().replace("-", "");
-        createTable(randomTableName);
+        createResultTable(randomTableName);
         conf.setLong("delta", request.getTimeDelta().getSeconds()*1000);
+
         Job job = Job.getInstance(conf, "CalculateInstrumentPrices");
+
         job.setJarByClass(InstrumentAnalyticsService.class);
         Scan scan = new Scan();
-        scan.withStartRow(Bytes.toBytes(request.getSymbol() + "_" + request.getStartDate().getSeconds() * 1000));
-        scan.withStopRow(Bytes.toBytes(request.getSymbol() + "_" + request.getEndDate().getSeconds() * 1000),true);
+
+        byte[] startRow = combineBytes(
+            Bytes.toBytes(request.getSymbol() + "_"),
+            Bytes.toBytes(request.getStartDate().getSeconds() * 1000)
+        );
+        byte[] endRow = combineBytes(
+            Bytes.toBytes(request.getSymbol() + "_"),
+            Bytes.toBytes(request.getEndDate().getSeconds() * 1000)
+        );
+
+        System.out.println("Start date: " + request.getStartDate());
+        System.out.println("End date: " + request.getEndDate());
+
+        System.out.println("Start row: " + request.getSymbol() + "_" + request.getStartDate().getSeconds() * 1000);
+        System.out.println("End row: " + request.getSymbol() + "_" + request.getEndDate().getSeconds() * 1000);
+
+        scan.withStartRow(startRow);
+        scan.withStopRow(endRow,true);
+
         TableMapReduceUtil.initTableMapperJob(
                 "instrument_prices",        // input table
                 scan,               // Scan instance to control CF and attribute selection
@@ -84,18 +124,19 @@ public class InstrumentAnalyticsService extends InstrumentAnalyticsGrpc.Instrume
                 job);
 
         boolean b = job.waitForCompletion(true);
+
         if (!b) {
             throw new IOException("error with job!");
         }
 
+        scan = new Scan();
         Table resultTable = connection.getTable(TableName.valueOf(randomTableName));
         ResultScanner scanner = resultTable.getScanner(scan);
-
         InstrumentPricesResponse response = buildResponse(scanner);
 
         scanner.close();
         resultTable.close();
-        deleteTable(randomTableName);
+        deleteResultTable(randomTableName);
 
         return response;
     }
@@ -123,14 +164,25 @@ public class InstrumentAnalyticsService extends InstrumentAnalyticsGrpc.Instrume
 
         @Override
         protected void map(ImmutableBytesWritable rowKey, Result result, Context context) throws IOException, InterruptedException {
-            String rowKeyStr = Bytes.toString(rowKey.get());
-            String[] parts = rowKeyStr.split("_");
-            long timestamp = Long.parseLong(parts[1]);
-            double priceValue = Bytes.toDouble(result.getValue(Bytes.toBytes("series"), Bytes.toBytes("val")));
-            long intervalStart = timestamp - (timestamp % context.getConfiguration().getLong("interval", 60000)); // Default interval 1 minute
-            interval.set(intervalStart);
-            price.set(priceValue);
-            context.write(interval, price);
+            byte underscoreByte = "_".getBytes(StandardCharsets.UTF_8)[0];
+            int underscoreIndex = -1;
+            for (int i = 0; i < rowKey.get().length; i++) {
+                if (rowKey.get()[i] == underscoreByte) {
+                    underscoreIndex = i;
+                    break;
+                }
+            }
+
+            if (underscoreIndex != -1 && underscoreIndex < rowKey.get().length - 1) {
+                byte[] timestampBytes = Arrays.copyOfRange(rowKey.get(), underscoreIndex + 1, rowKey.get().length);
+                long timestamp = Bytes.toLong(timestampBytes);
+                String priceValueStr = Bytes.toString(result.getValue(Bytes.toBytes("series"), Bytes.toBytes("val")));
+                double priceValue = Double.parseDouble(priceValueStr);
+                long intervalStart = timestamp - (timestamp % context.getConfiguration().getLong("interval", 60000)); // Default interval 1 minute
+                interval.set(intervalStart);
+                price.set(priceValue);
+                context.write(interval, price);
+            }
         }
     }
 
@@ -148,7 +200,7 @@ public class InstrumentAnalyticsService extends InstrumentAnalyticsGrpc.Instrume
                 count++;
             }
             double average = sum / count;
-            Put put = new Put(Bytes.toBytes(key.toString()));
+            Put put = new Put(Bytes.toBytes(key.get()));
             put.addColumn(CF, COUNT, Bytes.toBytes(average));
             context.write(null, put);
         }

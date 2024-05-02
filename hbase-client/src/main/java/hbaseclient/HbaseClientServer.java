@@ -26,15 +26,23 @@ public class HbaseClientServer {
     public HbaseClientServer(int port) throws IOException {
         this.port = port;
         ServerBuilder<?> serverBuilder = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create());
-        String zookeeperHost = System.getenv("ZOOKEEPER_HOST");
+        String hadoopHost = System.getenv("HADOOP_HOST");
         String zookeeperPort = System.getenv("ZOOKEEPER_PORT");
+        String defaultFSProtocol = System.getenv("FS_PROTOCOL");
+        String hdfsPort = System.getenv("FS_PORT");
 
-        if (zookeeperHost == null || zookeeperHost.isEmpty() || zookeeperPort == null || zookeeperPort.isEmpty()) {
-            throw new IllegalArgumentException("ZOOKEEPER_HOST or ZOOKEEPER_PORT environment variables are missing or empty.");
+        if (hadoopHost == null || hadoopHost.isEmpty() || zookeeperPort == null || zookeeperPort.isEmpty() ||
+            defaultFSProtocol == null || defaultFSProtocol.isEmpty() || hdfsPort == null || hdfsPort.isEmpty()) {
+            throw new IllegalArgumentException("environment variables are missing or empty.");
         }
+
         Configuration config = HBaseConfiguration.create();
-        config.set("hbase.zookeeper.quorum", zookeeperHost);
+        config.set("hbase.zookeeper.quorum", hadoopHost);
         config.set("hbase.zookeeper.property.clientPort", zookeeperPort);
+        config.set("mapreduce.framework.name","yarn");
+        config.set("yarn.resourcemanager.hostname",hadoopHost);
+        config.set("fs.defaultFS", defaultFSProtocol + "://" + hadoopHost+ ":" +hdfsPort);
+
         connection = ConnectionFactory.createConnection(config);
         Table usersTable = connection.getTable(TableName.valueOf("user"));
         Table portfolioTable = connection.getTable(TableName.valueOf("portfolio"));

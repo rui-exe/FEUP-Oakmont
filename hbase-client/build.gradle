@@ -13,6 +13,9 @@ repositories {
 
 dependencies {
     implementation "org.apache.hadoop:hadoop-common:${hadoopVersion}"
+    implementation "org.apache.hadoop:hadoop-mapreduce-client-jobclient:${hadoopVersion}"
+    implementation "org.apache.hadoop:hadoop-mapreduce-client-shuffle:${hadoopVersion}"
+    implementation "org.apache.hadoop:hadoop-mapreduce-client-common:${hadoopVersion}"
     implementation "org.apache.hbase:hbase:${hbaseVersion}"
     implementation "org.apache.hbase:hbase-common:${hbaseVersion}"
     implementation "org.apache.hbase:hbase-client:${hbaseVersion}"
@@ -42,6 +45,7 @@ jar {
 
 shadowJar {
     project.configurations.implementation.canBeResolved = true
+    zip64 true // Enable zip64 extension
     configurations = [project.configurations.implementation]
     archiveBaseName.set("hbase-client")
     archiveClassifier.set('')
