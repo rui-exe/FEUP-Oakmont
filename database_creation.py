@@ -65,7 +65,7 @@ def create_tables():
     # Create table to store by symbol_postid the posts
     symbol_posts_table_name = 'symbol_posts'
     if symbol_posts_table_name.encode() not in connection.tables():
-        families = {'posts': {}}
+        families = {'info':{}, 'posts': {}}
         connection.create_table(symbol_posts_table_name, families)
         print(f"Table '{symbol_posts_table_name}' created.")
     

@@ -144,8 +144,7 @@ def populate_posts(connection):
     data_posts_by_symbol = dict()
     data_posts_by_user = dict()
     letters = dict()
-    user_id = 0
-    symbol_id = 0
+    post_id = 0
     rows = []
     with open("datasets/stock_tweets.csv", "r") as csvfile:
         reader = csv.DictReader(csvfile)
@@ -173,13 +172,13 @@ def populate_posts(connection):
         symbol_posts_json = json.dumps({"username": username, "post": post})
         data_symbols[symbol][b'posts:' + date] = symbol_posts_json.encode('utf-8')
 
-        if f"{symbol}_{symbol_id}" not in data_posts_by_symbol:	
-            data_posts_by_symbol[f"{symbol}_{symbol_id}"] = {}
-        data_posts_by_symbol[f"{symbol}_{symbol_id}"][b'posts:' + date] = symbol_posts_json.encode('utf-8')
+        if f"{symbol}_{post_id}" not in data_posts_by_symbol:	
+            data_posts_by_symbol[f"{symbol}_{post_id}"] = {}
+        data_posts_by_symbol[f"{symbol}_{post_id}"][b'posts:' + date] = symbol_posts_json.encode('utf-8')
 
-        if f"{username}_{user_id}" not in data_posts_by_user:
-            data_posts_by_user[f"{username}_{user_id}"] = {}
-        data_posts_by_user[f"{username}_{user_id}"][b'posts:' + date] = user_posts_json.encode('utf-8')
+        if f"{username}_{post_id}" not in data_posts_by_user:
+            data_posts_by_user[f"{username}_{post_id}"] = {}
+        data_posts_by_user[f"{username}_{post_id}"][b'posts:' + date] = user_posts_json.encode('utf-8')
 
         #split the post into words and populate the letters table
         post = post.split()
@@ -191,12 +190,17 @@ def populate_posts(connection):
         for word in post:
             if word not in letters:
                 letters[word] = {}
-            letters[word][f'posts:{symbol}_{symbol_id}'] = b'1'
-            letters[word][f'posts:{username}_{user_id}'] = b'1'
+            letters[word][f'posts:{symbol}_{post_id}'] = b'1'
+            letters[word][f'posts:{username}_{post_id}'] = b'1'
 
 
-        user_id += 1
-        symbol_id += 1
+        post_id += 1
+    
+  
+    #create a counter in the symbol_posts table to store the last post_id use the counter_set method
+    symbol_table = connection.table('symbol_posts')
+    symbol_table.counter_set(b'info', b'info:post_id', post_id)
+
 
 
     populate_table(connection, 'user', data_users)

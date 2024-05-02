@@ -37,7 +37,7 @@ const Layout = ({ children }) => {
   useEffect(() => {
     const timerId = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-    }, 1000); // Adjust the debounce time as needed
+    }, 250); // Adjust the debounce time as needed
 
     return () => {
       clearTimeout(timerId);

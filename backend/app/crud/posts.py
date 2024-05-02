@@ -90,12 +90,48 @@ def create_new_post(db: Connection, post: dict) -> Post:
         post["symbol"].encode("utf-8"): {financial_post_column: post_data}
     }
 
+    #get last post id from the symbol_post table counter and increment it that is saved in this symbol_table.counter_set(b'info', b'post_id', post_id)
+    symbol_posts_table = db.table("symbol_posts")
+    post_id = symbol_posts_table.counter_inc(b"info", b"info:post_id", 1)
+
+    data_posts_by_symbol = dict()
+    data_posts_by_user = dict()
+    #create the post_id_symbol and post_id_user columns
+    data_posts_by_symbol[f"{post['symbol']}_{post_id}"] = {b'posts:' + timestamp: post_data}
+    data_posts_by_user[f"{post['username']}_{post_id}"] = {b'posts:' + timestamp: post_data}
+
+    # save the table of the user_posts
+    user_posts_table = db.table("user_posts")
+
+    # save the words of the post in the letters table
+    letters_table = db.table("letters")
+    post_text = post["text"].split()
+    #remove ponctuation
+    post_text = [word.strip(",.!?") for word in post_text]
+    #remove enters
+    post_text = [word.replace('\n','') for word in post_text]
+
+    letters = dict()
+    for word in post_text:
+        if word not in letters:
+            letters[word] = {}
+        letters[word] = {f"posts:{post['username']}_{post_id}": b"1"}
+        letters[word][f"posts:{post['symbol']}_{post_id}"] = b"1"
+
+
+
     # Open tables and perform batch operations
-    with user_table.batch() as user_batch, financial_table.batch() as financial_batch:
+    with user_table.batch() as user_batch, financial_table.batch() as financial_batch, symbol_posts_table.batch() as symbol_posts_batch, user_posts_table.batch() as user_posts_batch:
         for user_row, user_columns in user_batch_data.items():
             user_batch.put(user_row, user_columns)
         for financial_row, financial_columns in financial_batch_data.items():
             financial_batch.put(financial_row, financial_columns)
+        for symbol_row, symbol_columns in data_posts_by_symbol.items():
+            symbol_posts_batch.put(symbol_row.encode("utf-8"), symbol_columns)
+        for user_row, user_columns in data_posts_by_user.items():
+            user_posts_batch.put(user_row.encode("utf-8"), user_columns)
+        for word, word_columns in letters.items():
+            letters_table.put(word.encode("utf-8"), word_columns)
 
     # Update the timestamp in the original post dict
     post["timestamp"] = timestamp
