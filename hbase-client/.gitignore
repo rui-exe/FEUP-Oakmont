@@ -33,3 +33,5 @@ HELP.md
 Ignore all .env files except for example ones
 *.env
 !*.example.env
+
+bin/
