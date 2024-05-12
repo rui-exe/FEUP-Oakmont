@@ -228,13 +228,14 @@ const FinancialInstrumentPage = () => {
           <h2 ref={scrollToRef} className="text-xl font-bold mb-4">Posts</h2>
           <div className="grid gap-4">
             {posts.map((post, index) => (
-              <div key={index} className="bg-gray-100 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold">
-                  <Link to={`/users/${post.username}`}>{post.username}</Link>
-                </h3>
-                <p className="text-gray-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
-                <p className="text-gray-500 mt-2">ID: {post.post_id}</p>
-                <p className="text-black-500 mt-2">{post.text}</p>
+              <div key={index} className="p-4 bg-gray-100 rounded-md">
+                <Link to={`/posts/${post.username}/${post.post_id}`}>
+                  <h3 className="text-lg font-semibold">
+                    <Link to={`/users/${post.username}`}>{post.username}</Link>
+                  </h3>
+                  <p className="text-gray-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
+                  <p className="text-black-500 mt-2">{post.text}</p>
+                </Link>
               </div>
             ))}
             {posts.length === 0 && <p className="text-gray-500 mt-4">No posts found</p>}

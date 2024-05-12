@@ -293,12 +293,13 @@ export default function Profile() {
               <div className="grid gap-4">
                 {posts.map((post, index) => (
                   <div key={index} className="bg-gray-100 p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold">
-                      <Link to={`/items/${post.symbol}`}>{post.symbol}</Link>
-                    </h3>
-                    <p className="text-gray-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
-                    <p className="text-gray-500 mt-2">ID: {post.post_id}</p>
-                    <p className="text-black-500 mt-2">{post.text}</p>
+                    <Link to={`/posts/${post.username}/${post.post_id}`}>
+                      <h3 className="text-lg font-semibold">
+                        <Link to={`/items/${post.symbol}`}>{post.symbol}</Link>
+                      </h3>
+                      <p className="text-gray-500 mt-2">{new Date(post.timestamp).toLocaleString()}</p>
+                      <p className="text-black-500 mt-2">{post.text}</p>
+                    </Link>
                   </div>
                 ))}
                 {posts.length === 0 && <p className="text-gray-500 mt-4">No posts found</p>}

@@ -8,6 +8,7 @@ import Layout from './components/layout';
 import { AuthProvider } from './auth/AuthContext';
 import 'tailwindcss/tailwind.css';
 import HomePage from './components/homePage';
+import PostPage from './components/postPage';
 
 const App = () => {
   return (
@@ -20,6 +21,8 @@ const App = () => {
             <Route path="/sign-in" element={<SignInPage />} />
             <Route path="/sign-up" element={<SignUpPage />} />
             <Route path="/items/:symbol" element={<FinancialInstrumentPage />} />
+            <Route path="/posts/:username/:post_id" element={<PostPage />} />
+            <Route path="*" element={<h1>Not Found</h1>} />
           </Routes>
         </Layout>
       </AuthProvider>
