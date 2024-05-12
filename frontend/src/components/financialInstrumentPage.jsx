@@ -141,11 +141,6 @@ const FinancialInstrumentPage = () => {
   // Destructure financial instrument data
   const { name, symbol: instrumentSymbol, currency, image } = financialInstrument;
 
-  // Dummy data for demonstration
-  const data = [
-    {
-    },
-  ];
 
   return (
     <div className="max-w-3xl w-full space-y-8 min-w-[40%]">
