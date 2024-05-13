@@ -1,2 +1,3 @@
 happybase
+passlib
 yfinance
