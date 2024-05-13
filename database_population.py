@@ -163,7 +163,7 @@ def populate_posts(connection):
     # Shuffle the rows to randomize their order set with seed
     random.seed(42)
     random.shuffle(rows)
-    for row in rows[:25000]:
+    for row in rows[:20000]:
         username = random.choice(users)[0].decode('utf-8')
         post = row['Tweet']
         symbol = row['Stock Name']
