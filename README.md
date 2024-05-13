@@ -34,3 +34,11 @@ python3 database_population.py
 python3 real_time.py
 ```
 Just be sure to have your .env file configured with the correct IEX Cloud API key.
+
+7. Access the frontend at http://localhost:3000 and the backend docs at http://localhost:8081/docs
+
+8 To access the HBase shell, run the following command:
+
+```bash
+docker exec -it hadoop /usr/local/hbase/bin/hbase shell
+```
