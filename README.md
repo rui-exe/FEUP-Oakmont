@@ -28,3 +28,9 @@ docker compose up --build
 python3 database_creation.py
 python3 database_population.py
 ```
+6. Optionally, you can run the following script in the background to perform real-time stock data updates:
+
+```bash
+python3 real_time.py
+```
+Just be sure to have your .env file configured with the correct IEX Cloud API key.
